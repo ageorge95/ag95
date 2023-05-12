@@ -42,4 +42,16 @@ if __name__ == '__main__':
             f"\n\toutput: {result}" \
             f"\n\texpected: {test[1]}"
 
+    for test in [
+        [1.0, '1'], ['1.0', '1'], ['-1.0', '-1'],
+        [34.2345, '34.2345'], [43234.23231450000, '43234.2323145'],
+        [Decimal('34.2345'), '34.2345'], [Decimal('43234.23231450000'), '43234.2323145'],
+    ]:
+        result = nr_normalisation(test[0])
+        assert result == test[1] ,\
+            f"invalid function return for" \
+            f"\n\tinput: {type(test[0]), test[0]}" \
+            f"\n\toutput: {result}" \
+            f"\n\texpected: {test[1]}"
+
     print('All tests are PASSED !')
