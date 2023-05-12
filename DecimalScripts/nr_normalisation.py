@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-def nr_normalisation(nr: str | int | float,
+def nr_normalisation(nr: Decimal | str | int | float,
                      decimals_overwrite: int = None) -> str:
     nr = str(nr)
 
@@ -30,7 +30,10 @@ if __name__ == '__main__':
         [[34.2, 1], '34.2'],
         [[34, 1], '34'], [[34, 5], '34'],
         [[34.0, 1], '34'], [[34.0, 5], '34'],
-        [[34.2345, 0], '34'], [[43234.23231450000, 0], '43234']
+        [[34.2345, 0], '34'], [[43234.23231450000, 0], '43234'],
+        [[Decimal('34'), 1], '34'], [[Decimal('34'), 5], '34'],
+        [[Decimal('34.0'), 1], '34'], [[Decimal('34.0'), 5], '34'],
+        [[Decimal('34.2345'), 0], '34'], [[Decimal('43234.23231450000'), 0], '43234']
     ]:
         result = nr_normalisation(*test[0])
         assert result == test[1] ,\
