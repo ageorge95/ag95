@@ -1,9 +1,5 @@
+from ag95 import nr_normalisation
 from decimal import Decimal
-# direct and as-a-package execution
-try:
-    from .nr_normalisation import nr_normalisation
-except:
-    from nr_normalisation import nr_normalisation
 
 def round_up_closer(nr: Decimal | str | int | float,
                     max_decimals: int) -> str:
