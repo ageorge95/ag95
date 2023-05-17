@@ -6,3 +6,6 @@ from .LoggingScripts.custom_logger import configure_logger
 from .Threading.thread_monitor import ThreadMonitor
 from .General.singleton_metaclass import Singleton_with_cache,\
     Singleton_without_cache
+from .sqlite.DbWrapper import DbWrapper,\
+    ColumnDef
+from .sqlite.DbMigration import DbMigration
