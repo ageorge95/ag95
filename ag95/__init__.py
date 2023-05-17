@@ -9,3 +9,4 @@ from .General.singleton_metaclass import Singleton_with_cache,\
 from .sqlite.DbWrapper import DbWrapper,\
     ColumnDef
 from .sqlite.DbMigration import DbMigration
+from .sqlite.DbBackup import Dbbackup
