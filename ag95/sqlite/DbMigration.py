@@ -1,23 +1,26 @@
 from ag95 import ColumnDef,\
     DbWrapper
-from typing import AnyStr
+from typing import AnyStr,\
+    List
 
 class DbMigration:
 
     def __init__(self,
-                 database_path: AnyStr = 'database.db'):
+                 database_path: AnyStr = 'database.db',
+                 all_tables_def: List = None):
+
         self.database_path = database_path
+        if not all_tables_def:
+            self.all_tables_def = [{'table_name': 'my_db_table_name',
+                                     'columns_def': [ColumnDef(column_name='my_column_name',
+                                                               column_type='INTEGER')]}]
+        else:
+            self.all_tables_def = all_tables_def
 
     def migrate(self):
-        all_tables_def = [
-            {'table_name': 'my_db_table_name',
-             'columns_def': [ColumnDef(column_name='my_column_name',
-                                       column_type='INTEGER')]},
-        ]
-
         with DbWrapper(database_path=self.database_path) as DB:
             current_table_columns = DB.get_tables_columns()
-            for table_def in all_tables_def:
+            for table_def in self.all_tables_def:
                 if table_def['table_name'] not in current_table_columns.keys():
                     DB.create_table(table_name=table_def['table_name'],
                                     columns_definition=table_def['columns_def'])
