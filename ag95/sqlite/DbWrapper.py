@@ -106,6 +106,40 @@ class DbWrapper():
         cursorObj = self.con.cursor()
         cursorObj.execute(sql)
 
+    def update_record(self,
+                      table_name: AnyStr,
+                      record_ID: int,
+                      data: Dict,
+                      skip_new_empty_entries: bool = False):
+
+        # extract the existing data (column names and values) as a dic
+        cursorObj = self.con.cursor()
+        column_names = cursorObj.execute(f"SELECT GROUP_CONCAT(NAME,',') FROM PRAGMA_TABLE_INFO('{table_name}')").fetchall()[0][0].split(',')
+        column_values = cursorObj.execute(f'SELECT * FROM {table_name} WHERE ID = (?)', [str(record_ID),]).fetchall()
+        existing_data = dict([[key, value] for key, value in zip(column_names, column_values[0])])
+
+        # only proceed if data is != existing_data
+        different = False
+        for key, value in data.items():
+            if data[key] != existing_data[key]:
+                different = True
+                break
+        if different:
+
+            # update the dict with the new data passed as an argument
+            existing_data.update(data)
+
+            # remove empty entries from the dict
+            if skip_new_empty_entries:
+                existing_data = dict(filter(lambda _:_[1], existing_data.items()))
+
+            # finally update the row inside the db
+            set_statement_keys = ','.join([f"{key} = (?)" for key, value in existing_data.items()])
+            set_statement_values = list(existing_data.values())
+            # set_statement = ','.join([f"{key} = '{value}'" for key, value in existing_data.items()])
+            sql = f"UPDATE {table_name} SET {set_statement_keys} WHERE ID = (?)"
+            cursorObj.execute(sql, set_statement_values + [str(existing_data['ID'])])
+
 if __name__ == '__main__':
     print('There is no DB available by default for this test.'
           ' Please create one before running this test. Use DbMigration for that.')
@@ -123,6 +157,13 @@ if __name__ == '__main__':
 
         result = str(DB.return_records(table_name='my_db_table_name'))
         expected = str([(1, timestamp, 7)])
+        assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
+        DB.update_record(table_name='my_db_table_name',
+                         record_ID=1,
+                         data={'my_column_name': 10})
+        result = str(DB.return_records(table_name='my_db_table_name'))
+        expected = str([(1, timestamp, 10)])
         assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
 
     print('All tests are PASSED !')
