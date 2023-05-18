@@ -1,3 +1,5 @@
 /.idea
 *.pyc
 /ag95/sqlite/database.db
+.__runtime_log.lock
+runtime_log.log
