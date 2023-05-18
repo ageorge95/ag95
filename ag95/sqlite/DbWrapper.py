@@ -83,10 +83,13 @@ class DbWrapper():
 
     def return_records(self,
                        table_name: AnyStr,
+                       where: AnyStr = None,
                        order: Literal['DESC', 'ASC'] = None,
                        limit: int = None) -> List:
 
         sql_command = f'SELECT * FROM {table_name}'
+        if where:
+            sql_command += f' {where}'
         if order:
             sql_command +=f' ORDER BY ID {order}'
         if limit:
