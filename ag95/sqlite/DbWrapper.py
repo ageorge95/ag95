@@ -83,15 +83,21 @@ class DbWrapper():
 
     def return_records(self,
                        table_name: AnyStr,
-                       where: AnyStr = None,
+                       select_values: List[AnyStr] = None,
+                       where_statement: AnyStr = None,
                        order: Literal['DESC', 'ASC'] = None,
-                       limit: int = None) -> List:
+                       limit: int = None) -> List[List]:
 
-        sql_command = f'SELECT * FROM {table_name}'
-        if where:
-            sql_command += f' {where}'
+        sql_command = f'SELECT '
+        if select_values:
+            sql_command += ', '.join(select_values)
+        else:
+            sql_command += '*'
+        sql_command += f' FROM {table_name}'
+        if where_statement:
+            sql_command += f' WHERE {where_statement}'
         if order:
-            sql_command +=f' ORDER BY ID {order}'
+            sql_command += f' ORDER BY ID {order}'
         if limit:
             sql_command += f' LIMIT {limit}'
 
@@ -149,24 +155,39 @@ if __name__ == '__main__':
     sleep(2)
 
     with DbWrapper() as DB:
+        # TEST correct column names query
         result = str(DB.get_tables_columns())
-        expected = str({'my_db_table_name': ['ID', 'TIMESTAMP', 'my_column_name']})
+        expected = str({'my_db_table_name': ['ID', 'TIMESTAMP', 'my_column_name1', 'my_column_name2']})
         assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
 
+        # TEST correct new data append
         timestamp = int(datetime.now().timestamp())
         DB.append_in_table(table_name='my_db_table_name',
-                           column_names=['my_column_name'],
-                           column_values=[7])
+                           column_names=['my_column_name1', 'my_column_name2'],
+                           column_values=[7, 5])
 
         result = str(DB.return_records(table_name='my_db_table_name'))
-        expected = str([(1, timestamp, 7)])
+        expected = str([(1, timestamp, 7, 5)])
         assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
 
+        # TEST correct filtered data return, 1 requested column
+        result = str(DB.return_records(table_name='my_db_table_name',
+                                       select_values=['my_column_name1']))
+        expected = str([(7,)])
+        assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
+        # TEST correct filtered data return, 2 requested columns
+        result = str(DB.return_records(table_name='my_db_table_name',
+                                       select_values=['my_column_name1', 'my_column_name2']))
+        expected = str([(7,5,)])
+        assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
+        # TEST correct record update
         DB.update_record(table_name='my_db_table_name',
                          record_ID=1,
-                         data={'my_column_name': 10})
+                         data={'my_column_name1': 10})
         result = str(DB.return_records(table_name='my_db_table_name'))
-        expected = str([(1, timestamp, 10)])
+        expected = str([(1, timestamp, 10, 5)])
         assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
 
     print('All tests are PASSED !')

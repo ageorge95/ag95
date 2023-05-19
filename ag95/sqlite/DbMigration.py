@@ -12,7 +12,9 @@ class DbMigration:
         self.database_path = database_path
         if not all_tables_def:
             self.all_tables_def = [{'table_name': 'my_db_table_name',
-                                     'columns_def': [ColumnDef(column_name='my_column_name',
+                                     'columns_def': [ColumnDef(column_name='my_column_name1',
+                                                               column_type='INTEGER'),
+                                                     ColumnDef(column_name='my_column_name2',
                                                                column_type='INTEGER')]}]
         else:
             self.all_tables_def = all_tables_def
