@@ -131,10 +131,14 @@ class SinglePlot:
 class MultiRowPlot:
     def __init__(self,
                  plots: List[ScatterPlotDef] | List[BarPlotDef],
-                 title: str = 'My Plot Frame'):
+                 title: str = 'My Plot Frame',
+                 height: int = None,
+                 showlegend: bool = True):
 
         self.plots = plots
         self.title = title
+        self.height = height
+        self.showlegend = showlegend
 
     def _return_html_plot(self,
                           plot_type: type(go.Scatter) | type(go.Bar),
@@ -198,13 +202,26 @@ class MultiRowPlot:
                                   row=row_id,
                                   col=1)
 
+        update_args = {'title_text': self.title,
+                       'showlegend': self.showlegend}
+
+        # update the height if requested
+        if self.height:
+            update_args |= {'height': self.height}
+
+        # force the tick labels by default
+        update_args |= {'xaxis_showticklabels': True}
+
+        # update data on hover by default
+        update_args |= {'hovermode': 'x'}
+
         # force show the x axis to show on all subplots
         # xaxis{n}_showticklabels is needed for each axis in order to show the x axis, when the shared_axes is ON
         if len(self.plots) > 1:
             force_show_x_axis_args = dict([[f'xaxis{i}_showticklabels', True] for i, _ in enumerate(range(2,len(self.plots)+1),1)])
-            fig.update_layout(**force_show_x_axis_args)
+            update_args |= force_show_x_axis_args
 
-        fig.update_layout(title_text=self.title)
+        fig.update_layout(**update_args)
 
         if show_fig:
             fig.show()
