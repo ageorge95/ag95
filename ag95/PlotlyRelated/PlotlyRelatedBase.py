@@ -191,6 +191,12 @@ class MultiRowPlot:
                                   row=row_id,
                                   col=1)
 
+        # force show the x axis to show on all subplots
+        # xaxis{n}_showticklabels is needed for each axis in order to show the x axis, when the shared_axes is ON
+        if len(self.plots) > 1:
+            force_show_x_axis_args = dict([[f'xaxis{i}_showticklabels', True] for i, _ in enumerate(range(2,len(self.plots)+1),1)])
+            fig.update_layout(**force_show_x_axis_args)
+
         if show_fig:
             fig.show()
 
