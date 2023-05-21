@@ -10,3 +10,6 @@ from .SqliteDatabase.DbWrapper import DbWrapper,\
     ColumnDef
 from .SqliteDatabase.DbMigration import DbMigration
 from .SqliteDatabase.DbBackup import Dbbackup
+from .PlotlyRelated.PlotlyRelatedBase import ScatterPlotDef,\
+    BarPlotDef,\
+    SinglePlot
