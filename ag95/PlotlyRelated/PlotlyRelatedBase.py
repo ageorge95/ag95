@@ -1,24 +1,8 @@
-from threading import Thread
-from time import sleep
 from typing import List,\
     Dict
-from multiprocessing import Manager
-from datetime import datetime,\
-    timedelta
 import plotly.graph_objects as go
-from multiprocessing import Queue
-from sys import stdin
-from ag95 import configure_logger
-from django.shortcuts import render
-from django.http import HttpResponse
-from os import environ,\
-    path
-from json import load,\
-    loads
-from time import sleep
 from datetime import datetime,\
     timedelta
-from collections import OrderedDict
 from plotly.subplots import make_subplots
 
 class ScatterPlotDef:
