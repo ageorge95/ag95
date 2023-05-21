@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <link href="https://nightly.datatables.net/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+    <script src="https://nightly.datatables.net/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <meta charset=utf-8 />
+    <title>{{page_title}}</title>
+	<style>
+      body {
+        font: 90%/1.45em "Helvetica Neue", HelveticaNeue, Verdana, Arial, Helvetica, sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #333;
+        background-color: #fff;
+      }
+
+      {% for table in tables %}
+        table#{{table.table_id}}.dataTable tbody tr:hover {
+          background-color: #ffa;
+        }
+
+        table#{{table.table_id}}.dataTable tbody tr:hover {
+          background-color: #ffa;
+        }
+
+        table#{{table.table_id}}.dataTable tbody tr:hover > .sorting_1 {
+          background-color: #ffa;
+        }
+      {% endfor %}
+
+      .content {
+        padding: 0 18px;
+        display: none;
+        overflow: hidden;
+        background-color: #f1f1f1;
+      }
+    </style>
+  </head>
+
+  <body>
+  <script>
+    $(document).ready( function () {
+      {% for table in tables %}
+        var table = $('#{{table.table_id}}').DataTable({
+            "ordering": true,
+            "order": [[{{table.order.columnID}}, "{{table.order.direction}}"]],
+            "orderCellsTop": true,
+            "deferRender": true,
+            "autoWidth": false,
+            "fixedHeader": true,
+            "pageLength": {{table.pageLength}},
+            "pagingType": "full_numbers",
+            columnDefs: [
+              { targets: {{table.restrict_width_columns}}, width: '2%' }
+            ]
+        });
+      {% endfor %}
+
+      var doc = $(".plotly-graph-div");
+        for (var i = 0; i < doc.length; i++) {
+            Plotly.relayout(doc[i], {autosize: true});
+        }
+    });
+
+  </script>
+
+  {% for table in tables %}
+
+    <div class="container">
+
+      <h1> {{table.table_title}} </h1>
+
+      <table id="{{table.table_id}}" class="display nowrap" width="100%">
+
+        <thead>
+          <tr>
+            {% for header in table.headers %}
+              <th>{{header}}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+
+        <tfoot>
+          <tr>
+            {% for header in table.headers %}
+              <th>{{header}}</th>
+            {% endfor %}
+          </tr>
+        </tfoot>
+
+        <tbody>
+          {% for row in table.rows %}
+            <tr>
+              {% for element in row %}
+                {% autoescape off %}
+                  <td style="color:{{element.text_color}}">{{element.text}}</td>
+                {% endautoescape %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+
+  </body>
+</html>

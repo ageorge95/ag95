@@ -14,3 +14,4 @@ from .PlotlyRelated.PlotlyRelatedBase import ScatterPlotDef,\
     BarPlotDef,\
     SinglePlot,\
     MultiRowPlot
+from .TemplatesHtml.export_html_templates import export_html_templates
