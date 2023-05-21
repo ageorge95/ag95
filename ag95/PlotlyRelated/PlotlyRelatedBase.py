@@ -9,6 +9,7 @@ class ScatterPlotDef:
     def __init__(self,
                  x_axis: List[List],
                  y_axis: List[List],
+                 title: str = 'My Plot',
                  forced_y_limits: List[int] = None,
                  v_rects: List[Dict] = None,
                  h_rects: List[Dict] = None,
@@ -18,6 +19,7 @@ class ScatterPlotDef:
 
         self.x_axis = x_axis
         self.y_axis = y_axis
+        self.title = title
         self.forced_y_limits = forced_y_limits
         self.v_rects = v_rects
         self.h_rects = h_rects
@@ -31,6 +33,7 @@ class BarPlotDef:
     def __init__(self,
                  x_axis: List[List],
                  y_axis: List[List],
+                 title: str = 'My Plot',
                  forced_y_limits: List[int] = None,
                  v_rects: List[Dict] = None,
                  h_rects: List[Dict] = None,
@@ -41,6 +44,7 @@ class BarPlotDef:
 
         self.x_axis = x_axis
         self.y_axis = y_axis
+        self.title = title
         self.forced_y_limits = forced_y_limits
         self.v_rects = v_rects
         self.h_rects = h_rects
@@ -73,7 +77,8 @@ class SinglePlot:
 
             data.append(plot_type(**kwargs))
 
-        fig = go.Figure(data=data)
+        fig = go.Figure(data=data,
+                        layout={'title_text': self.plot.title})
 
         # add any eventual vertical or horizontal rectangles
         if self.plot.v_rects:
@@ -125,9 +130,11 @@ class SinglePlot:
 
 class MultiRowPlot:
     def __init__(self,
-                 plots: List[ScatterPlotDef] | List[BarPlotDef]):
+                 plots: List[ScatterPlotDef] | List[BarPlotDef],
+                 title: str = 'My Plot Frame'):
 
         self.plots = plots
+        self.title = title
 
     def _return_html_plot(self,
                           plot_type: type(go.Scatter) | type(go.Bar),
@@ -137,8 +144,7 @@ class MultiRowPlot:
         fig = make_subplots(rows=len(self.plots),
                             cols=1,
                             shared_xaxes=True,
-                            # subplot_titles=initial_subplot_titles
-                            )
+                            subplot_titles=[_.title for _ in self.plots])
 
         for row_id, plot in enumerate(self.plots, 1):
             traces = []
@@ -156,6 +162,7 @@ class MultiRowPlot:
             fig.add_traces(traces,
                            rows=row_id,
                            cols=1)
+
             if plot.v_rects:
                 for _ in plot.v_rects:
                     fig.add_vrect(**_ | {'row': row_id,
@@ -196,6 +203,8 @@ class MultiRowPlot:
         if len(self.plots) > 1:
             force_show_x_axis_args = dict([[f'xaxis{i}_showticklabels', True] for i, _ in enumerate(range(2,len(self.plots)+1),1)])
             fig.update_layout(**force_show_x_axis_args)
+
+        fig.update_layout(title_text=self.title)
 
         if show_fig:
             fig.show()
