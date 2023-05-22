@@ -66,8 +66,8 @@ class DbWrapper():
                     record_ID: int):
 
         cursorObj = self.con.cursor()
-        set_statement = "DELETE FROM ? WHERE ID = (?)"
-        cursorObj.execute(set_statement, [table_name, record_ID, ])
+        set_statement = f"DELETE FROM {table_name} WHERE ID = (?)"
+        cursorObj.execute(set_statement, [record_ID, ])
 
     def add_column(self,
                    table_name: AnyStr,
