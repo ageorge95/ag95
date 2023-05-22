@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.8'
+VERSION = '0.0.9'
 DESCRIPTION = 'ag95 scripts collection'
 LONG_DESCRIPTION = 'Various scripts that can be used in all kinds of python projects.'
 
@@ -14,7 +14,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'concurrent_log_handler',
-        'django'
+        'django',
+        'plotly'
     ],  # add any additional packages that
     # needs to be installed along with your package. Eg: 'caer'
     keywords=['python', 'ag95']
