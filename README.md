@@ -8,7 +8,7 @@ You can quickly access the stuff by
   
   - use this repo as a package via `python -m pip install git+https://github.com/ageorge95/ag95.git`
   
-    - to upgrade the package you would have to run `python -m pip install --force-reinstall git+https://github.com/ageorge95/ag95.git`
+    - to upgrade the package you would have to run `python -m pip install --upgrade git+https://github.com/ageorge95/ag95.git`
 
 # Support
 Found this project useful? Send your ❤ in any form you can 🙂. Please contact me if you donated and want to be added to the contributors list !
