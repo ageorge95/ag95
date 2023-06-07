@@ -9,7 +9,7 @@ class ScatterPlotDef:
     def __init__(self,
                  x_axis: List[List],
                  y_axis: List[List],
-                 title: str = 'My Plot',
+                 title: str | bool = None,
                  forced_y_limits: List[int] = None,
                  v_rects: List[Dict] = None,
                  h_rects: List[Dict] = None,
@@ -33,7 +33,7 @@ class BarPlotDef:
     def __init__(self,
                  x_axis: List[List],
                  y_axis: List[List],
-                 title: str = 'My Plot',
+                 title: str | bool = None,
                  forced_y_limits: List[int] = None,
                  v_rects: List[Dict] = None,
                  h_rects: List[Dict] = None,
@@ -109,6 +109,9 @@ class SinglePlot:
             # force show only a certain y axis portion
             fig.update_layout(yaxis_range=[self.plot.forced_y_limits[0], self.plot.forced_y_limits[1]])
 
+        # remove the excessive white margins
+        fig.update_layout(margin = dict(l=20, r=20, t=20, b=20))
+
         if show_fig:
             fig.show()
 
@@ -131,7 +134,7 @@ class SinglePlot:
 class MultiRowPlot:
     def __init__(self,
                  plots: List[ScatterPlotDef] | List[BarPlotDef],
-                 title: str = 'My Plot Frame',
+                 title: str | bool = None,
                  height: int = None,
                  showlegend: bool = True):
 
