@@ -112,7 +112,7 @@ class SinglePlot:
             update_args |= {'yaxis_range': [self.plot.forced_y_limits[0], self.plot.forced_y_limits[1]]}
 
         # remove the excessive white margins
-        update_args |= {'margin': dict(l=20, r=20, t=20, b=20)}
+        update_args |= {'margin': dict(l=25, r=25, t=25, b=25)}
 
         # update data on hover by default
         update_args |= {'hovermode': 'x'}
@@ -158,7 +158,8 @@ class MultiRowPlot:
         fig = make_subplots(rows=len(self.plots),
                             cols=1,
                             shared_xaxes=True,
-                            subplot_titles=[_.title for _ in self.plots])
+                            subplot_titles=[_.title for _ in self.plots],
+                            vertical_spacing = 0.05)
 
         for row_id, plot in enumerate(self.plots, 1):
             traces = []
@@ -226,7 +227,7 @@ class MultiRowPlot:
         update_args |= {'hovermode': 'x'}
 
         # remove the excessive white margins
-        update_args |= {'margin': dict(l=20, r=20, t=20, b=20)}
+        update_args |= {'margin': dict(l=25, r=25, t=25, b=25)}
 
         # force show the x axis to show on all subplots
         # xaxis{n}_showticklabels is needed for each axis in order to show the x axis, when the shared_axes is ON
