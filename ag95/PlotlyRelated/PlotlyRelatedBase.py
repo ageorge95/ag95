@@ -88,15 +88,17 @@ class SinglePlot:
             for _ in self.plot.h_rects:
                 fig.add_hrect(**_)
 
+        update_args = {}
+
         if any([self.plot.force_show_until_current_datetime, self.plot.grey_out_missing_data_until_current_datetime]):
             # limit the plot horizontally, to see the missing data until the current time
             oldest_datapoint_refined = min([min(_) for _ in self.plot.x_axis])-timedelta(seconds=5)
             newest_datapoint_refined = max([max(_) for _ in self.plot.x_axis])+timedelta(seconds=5)
-            fig.update_layout(xaxis_range=[oldest_datapoint_refined, newest_datapoint_refined])
+            update_args |= {'xaxis_range': [oldest_datapoint_refined, newest_datapoint_refined]}
 
             if self.plot.force_show_until_current_datetime:
                 # force show up until the current datetime
-                fig.update_layout(xaxis_range=[oldest_datapoint_refined, self.plot.now])
+                update_args |= {'xaxis_range': [oldest_datapoint_refined, self.plot.now]}
 
             if self.plot.grey_out_missing_data_until_current_datetime:
                 # mark the missing data up until the current datetime with grey
@@ -107,10 +109,15 @@ class SinglePlot:
 
         if self.plot.forced_y_limits:
             # force show only a certain y axis portion
-            fig.update_layout(yaxis_range=[self.plot.forced_y_limits[0], self.plot.forced_y_limits[1]])
+            update_args |= {'yaxis_range': [self.plot.forced_y_limits[0], self.plot.forced_y_limits[1]]}
 
         # remove the excessive white margins
-        fig.update_layout(margin = dict(l=20, r=20, t=20, b=20))
+        update_args |= {'margin': dict(l=20, r=20, t=20, b=20)}
+
+        # update data on hover by default
+        update_args |= {'hovermode': 'x'}
+
+        fig.update_layout(**update_args)
 
         if show_fig:
             fig.show()
