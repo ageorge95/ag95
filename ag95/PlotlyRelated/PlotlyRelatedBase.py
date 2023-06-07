@@ -159,7 +159,7 @@ class MultiRowPlot:
                             cols=1,
                             shared_xaxes=True,
                             subplot_titles=[_.title for _ in self.plots],
-                            vertical_spacing = 0.05)
+                            vertical_spacing = (1/len(self.plots)) * 0.25)
 
         for row_id, plot in enumerate(self.plots, 1):
             traces = []
