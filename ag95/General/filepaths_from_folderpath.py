@@ -8,7 +8,7 @@ def extract_filenames_from_filepath(folderpath: AnyStr,
     _log = getLogger()
     filepaths = []
 
-    _log.info(f'Analysing {folderpath} ... with the following filters: {filter}')
+    _log.info(f'Analysing {folderpath} ... with the following filters: {filter_ends_with}')
     if path.isdir(folderpath):
         for first_path, subdirs, files in walk(folderpath):
             for name in files:
