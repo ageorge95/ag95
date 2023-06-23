@@ -94,6 +94,7 @@ class DbWrapper():
                        select_values: List[AnyStr] = None,
                        where_statement: AnyStr = None,
                        order: Literal['DESC', 'ASC'] = None,
+                       order_by: AnyStr = 'ID',
                        limit: int = None) -> List[List]:
 
         sql_command = f'SELECT '
@@ -105,7 +106,7 @@ class DbWrapper():
         if where_statement:
             sql_command += f' WHERE {where_statement}'
         if order:
-            sql_command += f' ORDER BY ID {order}'
+            sql_command += f' ORDER BY {order_by} {order}'
         if limit:
             sql_command += f' LIMIT {limit}'
 
