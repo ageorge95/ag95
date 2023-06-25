@@ -11,12 +11,14 @@ class Dbbackup():
     def __init__(self,
                  input_filepath: AnyStr = 'database.db',
                  output_filepath: AnyStr = 'database_BAK.db',
-                 print_progress: bool = False):
+                 print_progress: bool = False,
+                 pages: int = 0):
         self._log = getLogger()
 
         self.input_filepath = input_filepath
         self.output_filepath = output_filepath
         self.print_progress = print_progress
+        self.pages = pages
 
     def _backup_progress(self,
                          status,
@@ -32,7 +34,7 @@ class Dbbackup():
                 connect(self.output_filepath) as dst:
             with dst:
                 src.backup(dst,
-                           pages=1,
+                           pages=self.pages,
                            progress=self._backup_progress)
         self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
     def vacuum_db(self):
