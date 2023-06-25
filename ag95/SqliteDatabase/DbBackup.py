@@ -5,6 +5,7 @@ from time import sleep
 from sqlite3 import connect
 from typing import AnyStr
 from logging import getLogger
+from datetime import datetime
 
 class Dbbackup():
     def __init__(self,
@@ -26,12 +27,14 @@ class Dbbackup():
 
     def backup_db(self):
         # create new connections here, as these are used from different threads
+        start = datetime.now()
         with connect(self.input_filepath) as src,\
                 connect(self.output_filepath) as dst:
             with dst:
                 src.backup(dst,
                            pages=1,
                            progress=self._backup_progress)
+        self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
     def vacuum_db(self):
         with connect(self.input_filepath) as con:
             con.execute("VACUUM")
@@ -54,7 +57,6 @@ class Dbbackup():
             self._log.info(f'Vacuum completed !')
             self._log.info(f'Backing up the db to {self.output_filepath} ...')
             self.backup_db()
-            self._log.info(f'DB backup completed !')
 
     def thread_master(self):
         return Thread(target=self.thread_slave)
