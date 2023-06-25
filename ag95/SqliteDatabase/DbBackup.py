@@ -28,7 +28,6 @@ class Dbbackup():
             self._log.info(f'DB backup - {status}: Copied {total - remaining} of {total} pages...')
 
     def backup_db(self):
-        # create new connections here, as these are used from different threads
         start = datetime.now()
         with connect(self.input_filepath) as src,\
                 connect(self.output_filepath) as dst:
