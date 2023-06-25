@@ -42,8 +42,10 @@ class Dbbackup():
                            progress=self._backup_progress)
         self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
     def vacuum_db(self):
+        start = datetime.now()
         with connect(self.input_filepath) as con:
             con.execute("VACUUM")
+        self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
 
     def thread_slave(self):
         while True:
@@ -58,10 +60,8 @@ class Dbbackup():
                 if path.isfile('exit'):
                     print('Dbbackup terminated')
                     return
-            self._log.info(f'Vacuuming the db ...')
+
             self.vacuum_db()
-            self._log.info(f'Vacuum completed !')
-            self._log.info(f'Backing up the db to {self.output_filepath} ...')
             self.backup_db()
 
     def thread_master(self):
