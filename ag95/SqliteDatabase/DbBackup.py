@@ -1,5 +1,6 @@
 from ag95 import configure_logger
-from os import path
+from os import path,\
+    remove
 from threading import Thread
 from time import sleep
 from sqlite3 import connect
@@ -29,6 +30,10 @@ class Dbbackup():
 
     def backup_db(self):
         start = datetime.now()
+        # if the destination db exists remove it first, this significantly decreases the backup time
+        if path.isfile(self.output_filepath):
+            remove(self.output_filepath)
+
         with connect(self.input_filepath) as src,\
                 connect(self.output_filepath) as dst:
             with dst:
