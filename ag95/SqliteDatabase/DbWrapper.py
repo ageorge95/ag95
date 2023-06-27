@@ -20,6 +20,7 @@ class DbWrapper():
                  timeout: int = 60):
         self.database_path = database_path
         self.con = connect(database_path, timeout=timeout)
+        self.con.execute('pragma journal_mode=wal')
 
     def __enter__(self):
         return self
