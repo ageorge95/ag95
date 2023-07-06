@@ -34,20 +34,28 @@ class Dbbackup():
         if path.isfile(self.output_filepath):
             remove(self.output_filepath)
 
-        with connect(self.input_filepath) as src,\
-                connect(self.output_filepath) as dst:
-            src.execute('pragma journal_mode=wal')
+        # context managers do not work well with threads for some reason ...
+        # for now connect will be used outside of context
 
-            with dst:
-                src.backup(dst,
-                           pages=self.pages,
-                           progress=self._backup_progress)
+        src = connect(self.input_filepath)
+        dst = connect(self.output_filepath)
+
+        src.backup(dst,
+                   pages=self.pages,
+                   progress=self._backup_progress)
+
+        src.close()
+        dst.close()
+
         self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
     def vacuum_db(self):
         start = datetime.now()
-        with connect(self.input_filepath) as con:
+        # context managers do not work well with threads for some reason ...
+        # for now connect will be used outside of context
+        con = connect(self.input_filepath)
+        con.execute("VACUUM")
+        con.close()
 
-            con.execute("VACUUM")
         self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
 
     def thread_slave(self):
