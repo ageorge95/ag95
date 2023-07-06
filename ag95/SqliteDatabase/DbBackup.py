@@ -37,7 +37,6 @@ class Dbbackup():
         with connect(self.input_filepath) as src,\
                 connect(self.output_filepath) as dst:
             src.execute('pragma journal_mode=wal')
-            dst.execute('pragma journal_mode=wal')
 
             with dst:
                 src.backup(dst,
@@ -47,7 +46,6 @@ class Dbbackup():
     def vacuum_db(self):
         start = datetime.now()
         with connect(self.input_filepath) as con:
-            con.execute('pragma journal_mode=wal')
 
             con.execute("VACUUM")
         self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
