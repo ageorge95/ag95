@@ -8,6 +8,7 @@ from .General.singleton_metaclass import Singleton_with_cache,\
     Singleton_without_cache
 from .General.stdin_watcher import stdin_watcher
 from .General.filepaths_from_folderpath import extract_filenames_from_filepath
+from .TimeRelated.format_from_seconds import format_from_seconds
 from .SqliteDatabase.DbWrapper import DbWrapper,\
     ColumnDef
 from .SqliteDatabase.DbMigration import DbMigration
