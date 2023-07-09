@@ -1,4 +1,4 @@
-def format_from_seconds(seconds: int, float,
+def format_from_seconds(seconds: [int, float],
                         granularity: int = 2):
 
     intervals = (
