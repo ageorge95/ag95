@@ -27,7 +27,9 @@ if __name__ == '__main__':
         [[60*2, 2], '2 minutes'],
         [[60*60, 2], '1 hour'],
         [[60*60*2, 2], '2 hours'],
-        [[60*60*2+60, 2], '2 hours, 1 minute']
+        [[60*60*2+60, 2], '2 hours, 1 minute'],
+        [[60.0 * 60 * 2 + 60, 2], '2.0 hours, 1.0 minute'],
+        [[60.0 * 60 * 2 + 61, 3], '2.0 hours, 1.0 minute, 1.0 second']
     ]:
         result = format_from_seconds(*test[0])
         assert result == test[1] ,\
