@@ -58,25 +58,37 @@ class Dbbackup():
 
         self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
 
-    def thread_slave(self):
+    def thread_slave(self,
+                     time_between_backups_s: int = 60*60*12):
+        time_between_backup_checks_s = 60
+
+        def check_if_backup() -> bool:
+            if path.isfile(self.output_filepath):
+                mtimestamp = path.getmtime(self.output_filepath)
+                now_timestamp = datetime.now().timestamp()
+                return True if now_timestamp - mtimestamp > time_between_backups_s\
+                    else False
+            else:
+                return True
+
         while True:
-            # 1h until the first backup
-            # then 1h between subsequent backups
-            to_sleep_s = 1 * 60 * 60
-            seconds_slept = 0
-            while seconds_slept < to_sleep_s:
-                sleep(2)
-                seconds_slept += 2
+            if check_if_backup():
+                self.vacuum_db()
+                self.backup_db()
+            else:
+                seconds_slept = 0
+                while seconds_slept < time_between_backup_checks_s:
+                    sleep(2)
+                    seconds_slept += 2
 
-                if path.isfile('exit'):
-                    print('Dbbackup terminated')
-                    return
+                    if path.isfile('exit'):
+                        print('Dbbackup terminated')
+                        return
 
-            self.vacuum_db()
-            self.backup_db()
-
-    def thread_master(self):
-        return Thread(target=self.thread_slave)
+    def thread_master(self,
+                      time_between_backups_s: int = 60*60*12):
+        return Thread(target=self.thread_slave,
+                      args=(time_between_backups_s,))
 
 if __name__ == '__main__':
     configure_logger()
@@ -85,7 +97,7 @@ if __name__ == '__main__':
 
     # threading daemon backup request
     # exit files are used
-    Dbbackup(output_filepath='database_BAKdaemon.db').thread_master().start()
+    Dbbackup(output_filepath='database_BAKdaemon.db').thread_master(time_between_backups_s=5).start()
     with open('exit', 'w') as dummy:
         pass
 
