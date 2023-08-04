@@ -227,7 +227,8 @@ class MultiRowPlot:
         update_args |= {'hovermode': 'x'}
 
         # remove the excessive white margins
-        update_args |= {'margin': dict(l=25, r=25, t=25, b=25)}
+        update_args |= {'margin': dict(l=0, r=0, t=25, b=0)} if not self.title\
+            else {'margin': dict(l=0, r=0, t=42, b=0)}
 
         # force show the x axis to show on all subplots
         # xaxis{n}_showticklabels is needed for each axis in order to show the x axis, when the shared_axes is ON
