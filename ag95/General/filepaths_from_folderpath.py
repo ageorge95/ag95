@@ -20,10 +20,7 @@ def extract_filenames_from_filepath(folderpath: AnyStr,
     return filepaths
 
 if __name__ == '__main__':
-    from ag95 import configure_logger
     from pprint import pprint
-
-    configure_logger()
 
     pprint((extract_filenames_from_filepath(folderpath='.')))
     print('No automatic tests implemented so far; Please check the expected behavior manually.')
