@@ -45,7 +45,7 @@ class DbWrapper():
 
     def create_table(self,
                      table_name: AnyStr,
-                     columns_definition: List):
+                     columns_definition: List[ColumnDef]):
         columns_definition = [ColumnDef(column_name = 'ID',
                                         column_type = 'INTEGER PRIMARY KEY AUTOINCREMENT'),
                               ColumnDef(column_name='TIMESTAMP',
