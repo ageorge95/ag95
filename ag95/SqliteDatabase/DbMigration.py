@@ -30,11 +30,11 @@ class DbMigration:
                     for column_def in table_def['columns_def']:
                         if column_def.column_name not in current_table_columns[table_def['table_name']]:
                             # a table with this name exists, but the columns configuration has changed,
-                            # so the table will be dropped and recreated
-                            DB.drop_table(table_name=table_def['table_name'])
-                            DB.create_table(table_name=table_def['table_name'],
-                                            columns_definition=table_def['columns_def'])
-                            break
+                            # so the table will be updated
+                            # !!! ONLY NEW COLUMNS WILL BE ADDED !!!
+                            # !!! IF A COLUMN WAS DELETED FROM THE db_def IT WILL STILL BE PRESENT IN THE DB !!!
+                            DB.add_column(table_name=table_def['table_name'],
+                                          column_def=column_def)
 
 if __name__ == '__main__':
     DbMigration().migrate()
