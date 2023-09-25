@@ -4,7 +4,8 @@ def shorten_long_str(string: AnyStr,
                      separator: AnyStr = '...',
                      cut_length: int = 50):
     if len(string) > cut_length:
-        return f"{string[:cut_length]}{separator}{string[-cut_length:]}"
+        half = int(len(string)/2)
+        return f"{string[:min(half,int(cut_length/2))]}{separator}{string[-min(half,int(cut_length/2)):]}"
     else:
         return string
 
