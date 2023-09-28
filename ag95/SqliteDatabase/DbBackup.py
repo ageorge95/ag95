@@ -7,6 +7,7 @@ from sqlite3 import connect
 from typing import AnyStr
 from logging import getLogger
 from datetime import datetime
+from traceback import format_exc
 
 class Dbbackup():
     def __init__(self,
@@ -73,8 +74,11 @@ class Dbbackup():
 
         while True:
             if check_if_backup():
-                self.vacuum_db()
-                self.backup_db()
+                try:
+                    self.vacuum_db()
+                    self.backup_db()
+                except:
+                    self._log.warning(f'Failed to backup db:\n{format_exc(chain=False)}')
             else:
                 seconds_slept = 0
                 while seconds_slept < time_between_backup_checks_s:
