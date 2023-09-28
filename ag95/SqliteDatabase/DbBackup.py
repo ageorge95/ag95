@@ -1,6 +1,7 @@
 from ag95 import configure_logger
-from os import path,\
-    remove
+from os import (path,
+                remove,
+                mkdir)
 from threading import Thread
 from time import sleep
 from sqlite3 import connect
@@ -34,6 +35,13 @@ class Dbbackup():
         # if the destination db exists remove it first, this significantly decreases the backup time
         if path.isfile(self.output_filepath):
             remove(self.output_filepath)
+
+        # create the root folder if missing
+        if not path.isdir(path.dirname(self.output_filepath)):
+            try:
+                mkdir(path.dirname(self.output_filepath))
+            except:
+                pass
 
         # context managers do not work well with threads for some reason ...
         # for now connect will be used outside of context
@@ -79,6 +87,7 @@ class Dbbackup():
                     self.backup_db()
                 except:
                     self._log.warning(f'Failed to backup db:\n{format_exc(chain=False)}')
+                    sleep(5*60)
             else:
                 seconds_slept = 0
                 while seconds_slept < time_between_backup_checks_s:
