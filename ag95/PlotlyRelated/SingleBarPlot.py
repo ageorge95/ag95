@@ -29,6 +29,17 @@ if __name__ == '__main__':
     input(f'You should see SingleBarPlot [double_line & name];'
           f' press any key to continue, if the manual test is passed.')
 
+    # TEST SingleBarPlot [double_line & name & forced red color]
+    SinglePlot(plot=BarPlotDef(x_axis=[[1, 2, 3, 4, 5],
+                                       [1, 2, 3, 4, 5]],
+                               y_axis=[[2, 2, 2, 3, 4],
+                                       [3, 3, 3, 4, 5]],
+                               colors=['red', 'red'],
+                               name=['my_plot_line_1',
+                                     'my_plot_line_2'])).return_html_BarPlot(show_fig=True)
+    input(f'You should see SingleBarPlot [double_line & name & forced red color];'
+          f' press any key to continue, if the manual test is passed.')
+
     # TEST SingleBarPlot [double_line & name & forced_y_limits]
     SinglePlot(plot=BarPlotDef(x_axis=[[1, 2, 3, 4, 5],
                                        [1, 2, 3, 4, 5]],

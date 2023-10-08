@@ -10,6 +10,7 @@ class ScatterPlotDef:
     def __init__(self,
                  x_axis: List[List],
                  y_axis: List[List],
+                 colors: List[str] | bool = None,
                  title: str | bool = None,
                  forced_y_limits: List[int] = None,
                  v_rects: List[Dict] = None,
@@ -21,6 +22,7 @@ class ScatterPlotDef:
 
         self.x_axis = x_axis
         self.y_axis = y_axis
+        self.colors = colors
         self.title = title
         self.forced_y_limits = forced_y_limits
         self.v_rects = v_rects
@@ -36,6 +38,7 @@ class BarPlotDef:
     def __init__(self,
                  x_axis: List[List],
                  y_axis: List[List],
+                 colors: List[str] | bool = None,
                  title: str | bool = None,
                  forced_y_limits: List[int] = None,
                  v_rects: List[Dict] = None,
@@ -47,6 +50,7 @@ class BarPlotDef:
 
         self.x_axis = x_axis
         self.y_axis = y_axis
+        self.colors = colors
         self.title = title
         self.forced_y_limits = forced_y_limits
         self.v_rects = v_rects
@@ -74,6 +78,11 @@ class SinglePlot:
                       'y': self.plot.y_axis[i]}
             if self.plot.name:
                 kwargs |= ({'name': self.plot.name[i]})
+            if self.plot.colors:
+                if plot_type.__name__ is go.Scatter.__name__:
+                    kwargs |= ({'line': {'color': self.plot.colors[i]}})
+                if plot_type.__name__ is go.Bar.__name__:
+                    kwargs |= ({'marker_color': self.plot.colors[i]})
             if hasattr(self.plot, 'forced_width'):
                 if self.plot.forced_width:
                     kwargs |= ({'width': self.plot.forced_width})
@@ -175,6 +184,11 @@ class MultiRowPlot:
                           'y': plot.y_axis[i]}
                 if plot.name:
                     kwargs |= ({'name': plot.name[i]})
+                if plot.colors:
+                    if plot_type.__name__ is go.Scatter.__name__:
+                        kwargs |= ({'line': {'color': plot.colors[i]}})
+                    if plot_type.__name__ is go.Bar.__name__:
+                        kwargs |= ({'marker_color': plot.colors[i]})
                 if hasattr(plot, 'forced_width'):
                     if plot.forced_width:
                         kwargs |= ({'width': plot.forced_width})
