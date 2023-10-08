@@ -12,11 +12,11 @@ if __name__ == '__main__':
     input(f'You should see SingleBarPlot [single_line];'
           f' press any key to continue, if the manual test is passed.')
 
-    # TEST SingleBarPlot [single_line & name]
+    # TEST SingleBarPlot [single_line & no name]
     SinglePlot(plot=BarPlotDef(x_axis=[[1, 2, 3, 4, 5]],
                                y_axis=[[2, 2, 2, 3, 4]],
                                name=['my_plot_line_1'])).return_html_BarPlot(show_fig=True)
-    input(f'You should see SingleBarPlot [single_line & name];'
+    input(f'You should see SingleBarPlot [single_line & no name];'
           f' press any key to continue, if the manual test is passed.')
 
     # TEST SingleBarPlot [double_line & name]

@@ -1,5 +1,6 @@
-from typing import List,\
-    Dict
+from typing import (List,
+                    Dict,
+                    Literal)
 import plotly.graph_objects as go
 from datetime import datetime,\
     timedelta
@@ -15,7 +16,8 @@ class ScatterPlotDef:
                  h_rects: List[Dict] = None,
                  name: List = None,
                  force_show_until_current_datetime: bool = False,
-                 grey_out_missing_data_until_current_datetime: bool = False):
+                 grey_out_missing_data_until_current_datetime: bool = False,
+                 fill_method: List[Literal["tonexty", "tozeroy"]] | bool = None):
 
         self.x_axis = x_axis
         self.y_axis = y_axis
@@ -26,6 +28,7 @@ class ScatterPlotDef:
         self.name = name
         self.force_show_until_current_datetime = force_show_until_current_datetime
         self.grey_out_missing_data_until_current_datetime = grey_out_missing_data_until_current_datetime
+        self.fill_method = fill_method
 
         self.now = datetime.now()
 
@@ -70,10 +73,14 @@ class SinglePlot:
             kwargs = {'x': self.plot.x_axis[i],
                       'y': self.plot.y_axis[i]}
             if self.plot.name:
-                kwargs.update({'name': self.plot.name[i]})
+                kwargs |= ({'name': self.plot.name[i]})
             if hasattr(self.plot, 'forced_width'):
                 if self.plot.forced_width:
-                    kwargs.update({'width': self.plot.forced_width})
+                    kwargs |= ({'width': self.plot.forced_width})
+            # fill method for scatter plots
+            if hasattr(self.plot, 'fill_method'):
+                if self.plot.fill_method:
+                    kwargs |= ({'fill': self.plot.fill_method[i]})
 
             data.append(plot_type(**kwargs))
 
@@ -167,10 +174,14 @@ class MultiRowPlot:
                 kwargs = {'x': plot.x_axis[i],
                           'y': plot.y_axis[i]}
                 if plot.name:
-                    kwargs.update({'name': plot.name[i]})
+                    kwargs |= ({'name': plot.name[i]})
                 if hasattr(plot, 'forced_width'):
                     if plot.forced_width:
-                        kwargs.update({'width': plot.forced_width})
+                        kwargs |= ({'width': plot.forced_width})
+                # fill method for scatter plots
+                if hasattr(plot, 'fill_method'):
+                    if plot.fill_method:
+                        kwargs |= ({'fill': plot.fill_method[i]})
 
                 traces.append(plot_type(**kwargs))
 

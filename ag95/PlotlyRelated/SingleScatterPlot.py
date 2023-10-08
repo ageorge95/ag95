@@ -12,11 +12,11 @@ if __name__ == '__main__':
     input(f'You should see SingleScatterPlot [single_line];'
           f' press any key to continue, if the manual test is passed.')
 
-    # TEST SingleScatterPlot [single_line & name]
+    # TEST SingleScatterPlot [single_line & no name]
     SinglePlot(plot=ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
                                    y_axis=[[2, 2, 2, 3, 4]],
                                    name=['my_plot_line_1'])).return_html_ScatterPlot(show_fig=True)
-    input(f'You should see SingleScatterPlot [single_line & name];'
+    input(f'You should see SingleScatterPlot [single_line & no name];'
           f' press any key to continue, if the manual test is passed.')
 
     # TEST SingleScatterPlot [double_line & name]
@@ -27,6 +27,18 @@ if __name__ == '__main__':
                                    name=['my_plot_line_1',
                                          'my_plot_line_2'])).return_html_ScatterPlot(show_fig=True)
     input(f'You should see SingleScatterPlot [double_line & name];'
+          f' press any key to continue, if the manual test is passed.')
+
+    # TEST SingleScatterPlot [double_line & name & fill]
+    SinglePlot(plot=ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5],
+                                           [1, 2, 3, 4, 5]],
+                                   y_axis=[[2, 2, 2, 3, 4],
+                                           [3, 3, 3, 4, 5]],
+                                   fill_method=['tonexty',
+                                                'tonexty'],
+                                   name=['my_plot_line_1',
+                                         'my_plot_line_2'])).return_html_ScatterPlot(show_fig=True)
+    input(f'You should see SingleScatterPlot [double_line & name & fill];'
           f' press any key to continue, if the manual test is passed.')
 
     # TEST SingleScatterPlot [double_line & name & forced_y_limits]

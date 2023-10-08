@@ -20,16 +20,26 @@ if __name__ == '__main__':
     input(f'You should see MultiRowsScatterPlot [single_line, single_line];'
           f' press any key to continue, if the manual test is passed.')
 
+    # TEST MultiRowsScatterPlot [single_line & fill, single_line & fill]
+    MultiRowPlot(plots=[ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
+                                       y_axis=[[2, 2, 2, 3, 4]],
+                                       fill_method=['tonexty']),
+                        ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
+                                       y_axis=[[2, 2, 2, 3, 4]],
+                                       fill_method=['tozeroy'])]).return_html_ScatterPlot(show_fig=True)
+    input(f'You should see MultiRowsScatterPlot [single_line & fill, single_line & fill];'
+          f' press any key to continue, if the manual test is passed.')
+
     # TEST MultiRowsScatterPlot [single_line, single_line] + a plot title
     MultiRowPlot(plots=[ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
                                        y_axis=[[2, 2, 2, 3, 4]]),
                         ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
                                        y_axis=[[2, 2, 2, 3, 4]])],
                  title='My Really Loooooooooooooooooooooooooooooooooooooooooooooooooooooooong Plot Title').return_html_ScatterPlot(show_fig=True)
-    input(f'You should see MultiRowsScatterPlot [single_line, single_line];'
+    input(f'You should see MultiRowsScatterPlot [single_line, single_line] + a plot title;'
           f' press any key to continue, if the manual test is passed.')
 
-    # TEST MultiRowsScatterPlot [single_line, single_line] + a plot title + subplot titles
+    # TEST MultiRowsScatterPlot [single_line & title, single_line & title] + a plot title
     MultiRowPlot(plots=[ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
                                        y_axis=[[2, 2, 2, 3, 4]],
                                        title='My Really Loooooooooooooooooooooooooooooooooooooooooooooooooooooooong SubPlot Title'),
@@ -38,7 +48,7 @@ if __name__ == '__main__':
                                        title='My Really Loooooooooooooooooooooooooooooooooooooooooooooooooooooooong SubPlot Title')],
                  title='My Really Loooooooooooooooooooooooooooooooooooooooooooooooooooooooong Plot Title').return_html_ScatterPlot(
         show_fig=True)
-    input(f'You should see MultiRowsScatterPlot [single_line, single_line];'
+    input(f'You should see MultiRowsScatterPlot [single_line & title, single_line & title] + a plot title;'
           f' press any key to continue, if the manual test is passed.')
 
     # TEST MultiRowsScatterPlot [single_line, single_line, single_line]
