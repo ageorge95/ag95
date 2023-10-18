@@ -4,3 +4,5 @@
 .__runtime_log.lock
 runtime_log.log
 /ag95/sqlite
+/venv
+activate.bat
