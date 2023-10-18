@@ -62,14 +62,42 @@ class BarPlotDef:
 
         self.now = datetime.now()
 
+class HistogramPlotDef:
+    def __init__(self,
+                 x_axis: List[List],
+                 y_axis: List[List],
+                 colors: List[str] | bool = None,
+                 title: str | bool = None,
+                 forced_y_limits: List[int] = None,
+                 v_rects: List[Dict] = None,
+                 h_rects: List[Dict] = None,
+                 name: List = None,
+                 force_show_until_current_datetime: bool = False,
+                 grey_out_missing_data_until_current_datetime: bool = False,
+                 forced_width: float = 0):
+
+        self.x_axis = x_axis
+        self.y_axis = y_axis
+        self.colors = colors
+        self.title = title
+        self.forced_y_limits = forced_y_limits
+        self.v_rects = v_rects
+        self.h_rects = h_rects
+        self.name = name
+        self.force_show_until_current_datetime = force_show_until_current_datetime
+        self.grey_out_missing_data_until_current_datetime = grey_out_missing_data_until_current_datetime
+        self.forced_width = forced_width
+
+        self.now = datetime.now()
+
 class SinglePlot:
     def __init__(self,
-                 plot: ScatterPlotDef | BarPlotDef):
+                 plot: ScatterPlotDef | BarPlotDef | HistogramPlotDef):
 
         self.plot = plot
 
     def _return_html_plot(self,
-                          plot_type: type(go.Scatter) | type(go.Bar),
+                          plot_type: type(go.Scatter) | type(go.Bar) | type(go.Histogram),
                           show_fig: bool = False,
                           include_plotlyjs: bool = False):
         data = []
@@ -81,7 +109,8 @@ class SinglePlot:
             if self.plot.colors:
                 if plot_type.__name__ is go.Scatter.__name__:
                     kwargs |= ({'line': {'color': self.plot.colors[i]}})
-                if plot_type.__name__ is go.Bar.__name__:
+                elif (plot_type.__name__ is go.Bar.__name__ or
+                      plot_type.__name__ is go.Histogram.__name__):
                     kwargs |= ({'marker_color': self.plot.colors[i]})
             if hasattr(self.plot, 'forced_width'):
                 if self.plot.forced_width:
@@ -151,6 +180,13 @@ class SinglePlot:
                             show_fig: bool = False,
                             include_plotlyjs: bool = False):
         return self._return_html_plot(plot_type=go.Bar,
+                                      show_fig=show_fig,
+                                      include_plotlyjs=include_plotlyjs)
+
+    def return_html_HistogramPlot(self,
+                                  show_fig: bool = False,
+                                  include_plotlyjs: bool = False):
+        return self._return_html_plot(plot_type=go.Histogram,
                                       show_fig=show_fig,
                                       include_plotlyjs=include_plotlyjs)
 

@@ -14,8 +14,9 @@ from .SqliteDatabase.DbWrapper import DbWrapper,\
     ColumnDef
 from .SqliteDatabase.DbMigration import DbMigration
 from .SqliteDatabase.DbBackup import Dbbackup
-from .PlotlyRelated.PlotlyRelatedBase import ScatterPlotDef,\
-    BarPlotDef,\
-    SinglePlot,\
-    MultiRowPlot
+from .PlotlyRelated.PlotlyRelatedBase import (ScatterPlotDef,
+                                              BarPlotDef,
+                                              HistogramPlotDef,
+                                              SinglePlot,
+                                              MultiRowPlot)
 from .TemplatesHtml.export_html_templates import export_html_templates
