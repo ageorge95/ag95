@@ -87,7 +87,14 @@ class Dbbackup():
                     self.backup_db()
                 except:
                     self._log.warning(f'Failed to backup db:\n{format_exc(chain=False)}')
-                    sleep(5*60)
+                    seconds_slept = 0
+                    while seconds_slept < 5*60:
+                        sleep(2)
+                        seconds_slept += 2
+
+                        if path.isfile('exit'):
+                            print('Dbbackup terminated')
+                            return
             else:
                 seconds_slept = 0
                 while seconds_slept < time_between_backup_checks_s:
