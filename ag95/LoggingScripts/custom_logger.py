@@ -1,11 +1,13 @@
-from logging import basicConfig,\
-    INFO, DEBUG, WARNING, ERROR, CRITICAL,\
-    Formatter,\
-    StreamHandler
+from logging import (basicConfig,
+                     INFO, DEBUG, WARNING, ERROR, CRITICAL,
+                     Formatter,
+                     StreamHandler)
 from concurrent_log_handler import ConcurrentRotatingFileHandler
-from sys import stdout,\
-    platform
-from os import system
+from sys import (stdout,
+                 platform)
+from os import (system,
+                path,
+                mkdir)
 from typing import Literal
 
 def configure_logger(log_name : str = "runtime_log.log",
@@ -41,6 +43,14 @@ def configure_logger(log_name : str = "runtime_log.log",
     ch = StreamHandler(stream=stdout)
     ch.setLevel(DEBUG)
     ch.setFormatter(CustomFormatter())
+    # first check if the log_name specified is actually within a folder and try to create it
+    if not path.isdir(path.dirname(log_name)):
+        try:
+            mkdir(path.dirname(log_name))
+        except:
+            raise Exception(f'Your log name is invalid: {log_name}')
+
+    # and after that pass the argument along to ConcurrentRotatingFileHandler
     fh = ConcurrentRotatingFileHandler(log_name,
                                        mode='a',
                                        maxBytes=maxBytes,
@@ -55,7 +65,7 @@ def configure_logger(log_name : str = "runtime_log.log",
 if __name__ == '__main__':
     from logging import getLogger
 
-    configure_logger()
+    configure_logger(log_name='log\\my_log.log')
     log = getLogger()
 
     log.debug('I am a DEBUG message')
