@@ -44,7 +44,8 @@ def configure_logger(log_name : str = "runtime_log.log",
     ch.setLevel(DEBUG)
     ch.setFormatter(CustomFormatter())
     # first check if the log_name specified is actually within a folder and try to create it
-    if not path.isdir(path.dirname(log_name)):
+    if (path.dirname(log_name) and
+            not path.isdir(path.dirname(log_name))):
         try:
             mkdir(path.dirname(log_name))
         except:
