@@ -46,26 +46,49 @@ class Dbbackup():
         # context managers do not work well with threads for some reason ...
         # for now connect will be used outside of context
 
-        src = connect(self.input_filepath)
-        dst = connect(self.output_filepath)
+        try:
+            src = connect(self.input_filepath)
+            dst = connect(self.output_filepath)
 
-        src.backup(dst,
-                   pages=self.pages,
-                   progress=self._backup_progress)
+            src.backup(dst,
+                       pages=self.pages,
+                       progress=self._backup_progress)
 
-        src.close()
-        dst.close()
+            src.close()
+            dst.close()
 
-        self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
+            self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
+        except:
+            # try to release the connections if any exception occurred above
+            try:
+                src.close()
+                dst.close()
+            except:
+                # if closing the connections fails, simply do nothing
+                pass
+
+            # finally route the exception to the main thread
+            raise Exception(format_exc(chain=False))
     def vacuum_db(self):
         start = datetime.now()
         # context managers do not work well with threads for some reason ...
         # for now connect will be used outside of context
-        con = connect(self.input_filepath)
-        con.execute("VACUUM")
-        con.close()
+        try:
+            con = connect(self.input_filepath)
+            con.execute("VACUUM")
+            con.close()
 
-        self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
+            self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
+        except:
+            # try to release the connection if any exception occurred above
+            try:
+                con.close()
+            except:
+                # if closing the connections fails, simply do nothing
+                pass
+
+            # finally route the exception to the main thread
+            raise Exception(format_exc(chain=False))
 
     def thread_slave(self,
                      time_between_backups_s: int = 60*60*12):
