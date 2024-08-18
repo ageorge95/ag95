@@ -136,16 +136,27 @@ class SinglePlot:
         update_args = {}
 
         if any([self.plot.force_show_until_current_datetime, self.plot.grey_out_missing_data_until_current_datetime]):
-            # limit the plot horizontally, to see the missing data until the current time
             oldest_datapoint_refined = min([min(_) for _ in self.plot.x_axis])-timedelta(seconds=5)
             newest_datapoint_refined = max([max(_) for _ in self.plot.x_axis])+timedelta(seconds=5)
-            update_args |= {'xaxis_range': [oldest_datapoint_refined, newest_datapoint_refined]}
 
-            if self.plot.force_show_until_current_datetime:
+            if self.plot.force_show_until_current_datetime and not self.plot.grey_out_missing_data_until_current_datetime:
                 # force show up until the current datetime
                 update_args |= {'xaxis_range': [oldest_datapoint_refined, self.plot.now]}
 
-            if self.plot.grey_out_missing_data_until_current_datetime:
+            if self.plot.grey_out_missing_data_until_current_datetime and not self.plot.force_show_until_current_datetime:
+                # limit the plot horizontally, to see the missing data until the current time
+                update_args |= {'xaxis_range': [oldest_datapoint_refined, newest_datapoint_refined]}
+
+                # mark the missing data up until the current datetime with grey
+                fig.add_vrect(x0=max([max(_) for _ in self.plot.x_axis]),
+                              x1=self.plot.now,
+                              fillcolor='grey',
+                              opacity=0.5)
+
+            if self.plot.force_show_until_current_datetime and self.plot.grey_out_missing_data_until_current_datetime:
+                # force show up until the current datetime
+                update_args |= {'xaxis_range': [oldest_datapoint_refined, self.plot.now]}
+
                 # mark the missing data up until the current datetime with grey
                 fig.add_vrect(x0=max([max(_) for _ in self.plot.x_axis]),
                               x1=self.plot.now,
@@ -254,18 +265,29 @@ class MultiRowPlot:
                                  col=1)
 
             if any([plot.force_show_until_current_datetime, plot.grey_out_missing_data_until_current_datetime]):
-                # limit the plot horizontally, to see the missing data until the current time
                 oldest_datapoint_refined = min([min(_) for _ in plot.x_axis])-timedelta(seconds=5)
                 newest_datapoint_refined = max([max(_) for _ in plot.x_axis])+timedelta(seconds=5)
-                fig.update_xaxes(range=[oldest_datapoint_refined, newest_datapoint_refined],
-                                 row=row_id,
-                                 col=1)
 
-                if plot.force_show_until_current_datetime:
+                if plot.grey_out_missing_data_until_current_datetime and not plot.force_show_until_current_datetime:
+                    # mark the missing data up until the current datetime with grey
+                    fig.add_vrect(x0=max([max(_) for _ in plot.x_axis]),
+                                  x1=plot.now,
+                                  fillcolor='grey',
+                                  opacity=0.5,
+                                  row=row_id,
+                                  col=1)
+
+                    # limit the plot horizontally, to see the missing data until the current time
+                    fig.update_xaxes(range=[oldest_datapoint_refined, newest_datapoint_refined])
+
+                if plot.force_show_until_current_datetime and not plot.grey_out_missing_data_until_current_datetime:
+                    # force show up until the current datetime
+                    fig.update_xaxes(range=[oldest_datapoint_refined, plot.now])
+
+                if plot.force_show_until_current_datetime and plot.grey_out_missing_data_until_current_datetime:
                     # force show up until the current datetime
                     fig.update_layout(xaxis_range=[oldest_datapoint_refined, plot.now])
 
-                if plot.grey_out_missing_data_until_current_datetime:
                     # mark the missing data up until the current datetime with grey
                     fig.add_vrect(x0=max([max(_) for _ in plot.x_axis]),
                                   x1=plot.now,
