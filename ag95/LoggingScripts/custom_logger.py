@@ -1,7 +1,8 @@
 from logging import (basicConfig,
                      INFO, DEBUG, WARNING, ERROR, CRITICAL,
                      Formatter,
-                     StreamHandler)
+                     StreamHandler,
+                     getLogger)
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 from sys import (stdout,
                  platform)
