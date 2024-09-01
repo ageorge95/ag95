@@ -13,7 +13,8 @@ from typing import Literal
 def configure_logger(log_name : str = "runtime_log.log",
                      maxBytes: int = 20*1024*1024,
                      backupCount: int = 2,
-                     log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] = DEBUG):
+                     log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] = DEBUG,
+                     propagate_logger: bool = True):
 
     class CustomFormatter(Formatter):
         grey = "\x1b[38;21m"
@@ -39,6 +40,12 @@ def configure_logger(log_name : str = "runtime_log.log",
     if platform == 'win32':
         # enable colored console text on windows
         system('color')
+
+    if propagate_logger:
+        # some libs will interfere with the logger and overwrite the log level
+        # the logic below will make sure that the same log level is used for other "problematic" libs as well
+        for lib in ['requests', 'urllib']:
+            getLogger(lib).setLevel(log_level)
 
     ch = StreamHandler(stream=stdout)
     ch.setLevel(DEBUG)
