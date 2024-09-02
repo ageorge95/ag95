@@ -1,13 +1,16 @@
 from typing import (List,
                     Dict,
-                    Literal)
+                    Literal,
+                    Callable)
 from datetime import (datetime,
                       timedelta)
 
 def datetime_lists_normalise(datetime_lists: List[List[Dict]],
                              max_deviation_ms: float | int = 50,
                              supress_sanity_check_messages: bool = False,
-                             sort: Literal['ASC', 'DESC', 'NONE'] = 'ASC') -> List[Dict]:
+                             sort: Literal['ASC', 'DESC', 'NONE'] = 'ASC',
+                             custom_function_step: Callable = None,
+                             custom_function_total: Callable = None) -> List[Dict]:
 
     # some sanity checks first
     sanity_fail = [False, '']
@@ -44,11 +47,21 @@ def datetime_lists_normalise(datetime_lists: List[List[Dict]],
             for object in sublist:
                 relevant_datetime = list(object.keys())[0]
                 if deviation_comparison[0] <= relevant_datetime <= deviation_comparison[1]:
-                    to_append.append(*object.values())
+
+                    # execute a custom function, if provided, on each step
+                    if custom_function_step:
+                        to_append.append([*object.values(), custom_function_step(*object.values())])
+                    else:
+                        to_append.append(*object.values())
+
                     break # if a good value is found stop looking into the rest of the sublist
 
         if len(to_append) == sublists_len: # only add the new element if suitable values were found in all sublists
-            final_return.append({main_key: to_append})
+            # execute a custom function, if provided, on the total data
+            if custom_function_total:
+                final_return.append({main_key: [to_append, custom_function_total(to_append)]})
+            else:
+                final_return.append({main_key: to_append})
 
     return final_return
 
@@ -139,12 +152,24 @@ if __name__ == '__main__':
                             [{now-timedelta(minutes=4): 6}, {now-timedelta(minutes=2): 7},
                              {now-timedelta(minutes=1): 8}, {now: 9}],
 
-                            [{now-timedelta(minutes=4): 10}, {now-timedelta(minutes=2): 11},
-                             {now-timedelta(minutes=1): 12}, {now: 13}]]},
+                            [{now-timedelta(minutes=4): 10}, {now-timedelta(minutes=2): [11]},
+                             {now-timedelta(minutes=1): [12,786]}, {now: 13}]]},
 
-                            [{now-timedelta(minutes=2): [3,7,11]},
-                             {now-timedelta(minutes=1): [4,8,12]},
+                            [{now-timedelta(minutes=2): [3,7,[11]]},
+                             {now-timedelta(minutes=1): [4,8,[12,786]]},
                              {now: [5,9,13]}]],
+
+        # check the custom step function
+        [{'datetime_lists': [[{now: 1}]],
+          'custom_function_step': lambda x:x+1}, [{now: [[1,2]]}]],
+        [{'datetime_lists': [[{now-timedelta(minutes=4): 10}, {now: 1}]],
+          'custom_function_step': lambda x: x + 1}, [{now-timedelta(minutes=4): [[10,11]]}, {now: [[1, 2]]}]],
+
+        # check the custom final function
+        [{'datetime_lists': [[{now: 1}]],
+          'custom_function_total': lambda x: x + ['extra_stuff']}, [{now: [[1], [1, 'extra_stuff']]}]],
+        [{'datetime_lists': [[{now: 1}]],
+          'custom_function_total': lambda x: ['extra_stuff']}, [{now: [[1], ['extra_stuff']]}]],
     ]:
         result = datetime_lists_normalise(**test[0])
         assert result == test[1] ,\
