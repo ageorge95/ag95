@@ -19,14 +19,13 @@ def nr_normalisation(nr: Decimal | str | int | float,
     nr = nr.replace(',', '.')
     nr = remove_invalid_trailing(nr)
 
-    # check if the number is vlaid for further processing
+    # check if the number is valid for further processing
     if nr.count('.') > 1:
         print('Invalid number provided !')
         return None
 
     # remove the non-scientific representation
-    if not isinstance(nr, Decimal):
-        nr = str(Decimal(nr))
+    nr = f"{Decimal(nr):.{30}f}"
 
     # figure out the number of decimals
     if '.' not in nr:
@@ -90,6 +89,10 @@ if __name__ == '__main__':
         [['7.02e-06', 7], '0.000007'],
         [['7.02e-06', 8], '0.00000702'],
         [['7.02e-06', 2], '0'],
+
+        [['7.9e-07'], '0.00000079'],
+        [['7.9e-07', 7], '0.0000007'],
+        [['7.9e-07', 6], '0'],
     ]:
         result = nr_normalisation(*test[0])
         assert result == test[1] ,\
