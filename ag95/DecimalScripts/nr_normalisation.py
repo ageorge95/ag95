@@ -1,6 +1,4 @@
 from decimal import Decimal
-from itertools import count
-
 
 def nr_normalisation(nr: Decimal | str | int | float,
                      decimals_overwrite: int = None) -> str:
