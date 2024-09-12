@@ -3,7 +3,7 @@ from typing import (List,
 from decimal import Decimal
 from logging import getLogger
 from dataclasses import dataclass
-from ag95.LoggingScripts.custom_logger import configure_logger
+from ag95 import configure_logger
 
 @dataclass
 class MessagesTrailingDecision:
@@ -39,6 +39,9 @@ class TrailingDecision:
         self.direction = direction
         self.safety_net_detector_unit = Decimal(str(safety_net_detector_unit))
 
+        self.absolute_start_trailing = {'UP': self.position_price + self.position_price * self.start_trailing_unit,
+                                        'DOWN': self.position_price - self.position_price * self.start_trailing_unit}
+
     def _sanity_checks(self):
         '''
         various sanity checks, True if no issues were found, False otherwise
@@ -67,38 +70,41 @@ class TrailingDecision:
         '''
 
         if self.direction == 'UP':
-            return any([_ >= (self.position_price + self.start_trailing_unit * self.position_price) for _ in self.price_history])
+            return any([_ >= self.absolute_start_trailing['UP'] for _ in self.price_history])
         elif self.direction == 'DOWN':
-            return any([_ <= (self.position_price - self.start_trailing_unit * self.position_price) for _ in self.price_history])
+            return any([_ <= self.absolute_start_trailing['DOWN'] for _ in self.price_history])
 
     def _trailing_mode(self) -> dict:
         '''
         trailing mode
         '''
 
+        # first check if only the last value was fullfilled or not
+        if self.direction == 'UP':
+            if self.price_history[-1] == self.absolute_start_trailing['UP']:
+                return {'decision': False,
+                        'reason': MessagesTrailingDecision.only_last_value_case}
+        elif self.direction == 'DOWN':
+            if self.price_history[-1] == self.absolute_start_trailing['DOWN']:
+                return {'decision': False,
+                        'reason': MessagesTrailingDecision.only_last_value_case}
+
         # split the price history starting from the position where the limit was reached
         price_history_copy_reverse = self.price_history.copy()
         price_history_copy_reverse.reverse()
 
-        index_reverse_split = None
         for index, _ in enumerate(price_history_copy_reverse):
             if self.direction == 'UP':
-                if _ >= self.position_price + self.start_trailing_unit * self.position_price:
+                if _ >= self.absolute_start_trailing['UP']:
                     index_reverse_split = index
                     break
             elif self.direction == 'DOWN':
-                if _ <= self.position_price - self.start_trailing_unit * self.position_price:
+                if _ <= self.absolute_start_trailing['DOWN']:
                     index_reverse_split = index
                     break
 
-        # if index_reverse_split is 0, it means that only the last value
-        # meets the limit criteria => return False. no need to execute the following code
-        if index_reverse_split == 0:
-            self._log.info('Only the last value of the price history fulfills the limit criteria, no need to continue.')
-            return {'decision': False,
-                    'reason': MessagesTrailingDecision.only_last_value_case}
-
-        self.price_history = self.price_history[-index_reverse_split - 1:]
+        if index_reverse_split != 0:
+            self.price_history = self.price_history[-index_reverse_split - 1:]
 
         # all conditions are valid now => checking if the end limit was reached
         # check if the safet net mode needs to be activated or not
@@ -407,6 +413,78 @@ if __name__ == '__main__':
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
+          'safety_net_detector_unit': 0.03}, {'decision': True,
+                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+
+        # extra random tests
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'DOWN',
+          'safety_net_detector_unit': 0.03}, {'decision': False,
+                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'DOWN',
+          'safety_net_detector_unit': 0.03}, {'decision': False,
+                                              'reason': MessagesTrailingDecision.only_last_value_case}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 0.85169464],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'DOWN',
+          'safety_net_detector_unit': 0.03}, {'decision': True,
+                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 0.85169463],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'DOWN',
+          'safety_net_detector_unit': 0.03}, {'decision': False,
+                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'UP',
+          'safety_net_detector_unit': 0.03}, {'decision': False,
+                                              'reason': MessagesTrailingDecision.only_last_value_case}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'UP',
+          'safety_net_detector_unit': 0.03}, {'decision': True,
+                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421465],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'UP',
+          'safety_net_detector_unit': 0.03}, {'decision': False,
+                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464, 1.1195882008],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'UP',
+          'safety_net_detector_unit': 0.03}, {'decision': False,
+                                              'reason': MessagesTrailingDecision.safety_net_case}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464, 1.1195882007],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'UP',
+          'safety_net_detector_unit': 0.03}, {'decision': False,
+                                              'reason': MessagesTrailingDecision.safety_net_case}],
+        [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464, 1.1195882009],
+          'position_price': 1.0084,
+          'start_trailing_unit': 0.18,
+          'end_trailing_unit': 0.03,
+          'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': True,
                                               'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
 
