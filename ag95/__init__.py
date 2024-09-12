@@ -21,3 +21,5 @@ from .PlotlyRelated.PlotlyRelatedBase import (ScatterPlotDef,
                                               MultiRowPlot)
 from .TemplatesHtml.export_html_templates import export_html_templates
 from .DataManipulation.datetime_lists_normalise import datetime_lists_normalise
+from .TradingRelated.TrailingDecision import (TrailingDecision,
+                                              MessagesTrailingDecision)
