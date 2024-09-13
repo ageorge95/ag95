@@ -83,11 +83,15 @@ class TrailingDecision:
         if self.direction == 'UP':
             if self.price_history[-1] == self.absolute_start_trailing['UP']:
                 return {'decision': False,
-                        'reason': MessagesTrailingDecision.only_last_value_case}
+                        'reason': MessagesTrailingDecision.only_last_value_case,
+                        'extra': {'price_history[-1]': self.price_history[-1],
+                                  'absolute_start_trailing_UP': self.absolute_start_trailing['UP']}}
         elif self.direction == 'DOWN':
             if self.price_history[-1] == self.absolute_start_trailing['DOWN']:
                 return {'decision': False,
-                        'reason': MessagesTrailingDecision.only_last_value_case}
+                        'reason': MessagesTrailingDecision.only_last_value_case,
+                        'extra': {'price_history[-1]': self.price_history[-1],
+                                  'absolute_start_trailing_UP': self.absolute_start_trailing['DOWN']}}
 
         # split the price history starting from the position where the limit was reached
         price_history_copy_reverse = self.price_history.copy()
@@ -117,7 +121,12 @@ class TrailingDecision:
             if any([_ <= safety_net_limit_absolute for _ in self.price_history]):
                 self._log.warning('Safety net mode activated !')
                 return {'decision': False,
-                        'reason': MessagesTrailingDecision.safety_net_case}
+                        'reason': MessagesTrailingDecision.safety_net_case,
+                        'extra': {'new_start_limit': new_start_limit,
+                                  'end_limit_absolute': end_limit_absolute,
+                                  'safety_net_limit_absolute': safety_net_limit_absolute,
+                                  'position_price': self.position_price,
+                                  'price_history[-1]': self.price_history[-1]}}
 
         elif self.direction == 'DOWN':
             new_start_limit = min(self.price_history)
@@ -128,23 +137,39 @@ class TrailingDecision:
             if any([_ >= safety_net_limit_absolute for _ in self.price_history]):
                 self._log.warning('Safety net mode activated !')
                 return {'decision': False,
-                        'reason': MessagesTrailingDecision.safety_net_case}
+                        'reason': MessagesTrailingDecision.safety_net_case,
+                        'extra': {'new_start_limit': new_start_limit,
+                                  'end_limit_absolute': end_limit_absolute,
+                                  'safety_net_limit_absolute': safety_net_limit_absolute,
+                                  'position_price': self.position_price,
+                                  'price_history[-1]': self.price_history[-1]}}
 
         if decision:
             self._log.info('Decided that an order should be made.')
             return {'decision': True,
-                    'reason': MessagesTrailingDecision.trailing_end_fulfilled}
+                    'reason': MessagesTrailingDecision.trailing_end_fulfilled,
+                    'extra': {'new_start_limit': new_start_limit,
+                              'end_limit_absolute': end_limit_absolute,
+                              'safety_net_limit_absolute': safety_net_limit_absolute,
+                              'position_price': self.position_price,
+                              'price_history[-1]': self.price_history[-1]}}
         else:
             self._log.info('Decided that an order should NOT be made.')
             return {'decision': False,
-                    'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}
+                    'reason': MessagesTrailingDecision.trailing_end_not_fulfilled,
+                    'extra': {'new_start_limit': new_start_limit,
+                              'end_limit_absolute': end_limit_absolute,
+                              'safety_net_limit_absolute': safety_net_limit_absolute,
+                              'position_price': self.position_price,
+                              'price_history[-1]': self.price_history[-1]}}
 
     def take(self) -> dict:
         checks = self._sanity_checks()
         if not checks[0]:
             self._log.error(f'Failed sanity checks {checks[1]} !!')
             return {'decision': None,
-                    'reason': checks[1]}
+                    'reason': checks[1],
+                    'extra': {}}
         else:
             if self._check_limit_reached():
                 self._log.info('Limit reached, we are in the "following" mode.')
@@ -154,7 +179,8 @@ class TrailingDecision:
             else:
                 self._log.info('Limit NOT reached, we are in the standby mode.')
                 return {'decision': False,
-                        'reason': MessagesTrailingDecision.standby_case}
+                        'reason': MessagesTrailingDecision.standby_case,
+                        'extra': {}}
 
 if __name__ == '__main__':
 
@@ -490,10 +516,19 @@ if __name__ == '__main__':
 
     ]:
         result = TrailingDecision(**test[0]).take()
-        assert result == test[1] ,\
+        assert result['decision'] == test[1]['decision'] and result['reason'] == test[1]['reason'] ,\
             f"invalid function return for" \
             f"\n\tinput: {test[0]}" \
             f"\n\toutput: {result}" \
             f"\n\texpected: {test[1]}"
 
     print('All tests are PASSED !')
+
+    # quick check, uncomment and modify
+    # from pprint import pprint
+    # pprint(TrailingDecision(price_history=[73.1],
+    #                         position_price=89.4,
+    #                         start_trailing_unit=0.18,
+    #                         end_trailing_unit=0.03,
+    #                         direction='DOWN',
+    #                         safety_net_detector_unit=0.03).take())
