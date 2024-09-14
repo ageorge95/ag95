@@ -118,7 +118,7 @@ class TrailingDecision:
             safety_net_limit_absolute = end_limit_absolute - end_limit_absolute * self.safety_net_detector_unit
             decision = self.price_history[-1] <= end_limit_absolute
 
-            if any([_ <= safety_net_limit_absolute for _ in self.price_history]):
+            if self.price_history[-1] <= safety_net_limit_absolute:
                 self._log.warning('Safety net mode activated !')
                 return {'decision': False,
                         'reason': MessagesTrailingDecision.safety_net_case,
@@ -134,7 +134,7 @@ class TrailingDecision:
             safety_net_limit_absolute = end_limit_absolute + end_limit_absolute * self.safety_net_detector_unit
             decision = self.price_history[-1] >= end_limit_absolute
 
-            if any([_ >= safety_net_limit_absolute for _ in self.price_history]):
+            if self.price_history[-1] >= safety_net_limit_absolute:
                 self._log.warning('Safety net mode activated !')
                 return {'decision': False,
                         'reason': MessagesTrailingDecision.safety_net_case,
@@ -427,13 +427,20 @@ if __name__ == '__main__':
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
                                               'reason': MessagesTrailingDecision.safety_net_case}],
+        [{'price_history': [1, 1.01, 0.9, 1.05, 1.08, 1.045, 1.01, 0.95],
+          'position_price': 1,
+          'start_trailing_unit': 0.1,
+          'end_trailing_unit': 0.05,
+          'direction': 'DOWN',
+          'safety_net_detector_unit': 0.03}, {'decision': True,
+                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
         [{'price_history': [1, 1.01, 1.05, 1.08, 1.045, 1.1, 1.2, 0.9, 1.3, 0.91, 0.905],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.safety_net_case}],
+                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
         [{'price_history': [1, 2, 3, 0.9, 0.91, 0.92, 0.93, 0.94, 0.95],
           'position_price': 1,
           'start_trailing_unit': 0.1,
