@@ -28,7 +28,22 @@ class TrailingDecision:
                  end_trailing_unit: int | float | str | Decimal,
                  direction: Literal['UP', 'DOWN'],
                  safety_net_detector_unit: int | float | str | Decimal):
-
+        """
+        @param price_history:
+            The list containing the history of previous prices. No limits on length.
+        @param position_price:
+            The starting price.
+        @param start_trailing_unit:
+            The parameter used to compute the start_trailing absolute value. Specified in units, ex 0.1 (=10%)
+        @param end_trailing_unit:
+            The parameter used to compute the end_trailing absolute value. Specified in units, ex 0.1 (=10%)
+        @param direction:
+            The logic can adapt to both DOWN/ UP scenarios;
+            For example if the code is used to compute the best buy-in price, the DOWN direction should be specified.
+        @param safety_net_detector_unit:
+            This safety parameter will prevent bad decisions if the price swings too much;
+            Very useful if the specified data is sparse.
+        """
         self._log = getLogger('TrailingDecision')
 
         # str() is needed here otherwise Decimal would have strange/ inexact values
