@@ -27,7 +27,8 @@ class TrailingDecision:
                  start_trailing_unit: int | float | str | Decimal,
                  end_trailing_unit: int | float | str | Decimal,
                  direction: Literal['UP', 'DOWN'],
-                 safety_net_detector_unit: int | float | str | Decimal):
+                 safety_net_detector_unit: int | float | str | Decimal,
+                 show_logs: bool = False):
         """
         @param price_history:
             The list containing the history of previous prices. No limits on length.
@@ -44,7 +45,8 @@ class TrailingDecision:
             This safety parameter will prevent bad decisions if the price swings too much;
             Very useful if the specified data is sparse.
         """
-        self._log = getLogger('TrailingDecision')
+        if show_logs:
+            self._log = getLogger('TrailingDecision')
 
         # str() is needed here otherwise Decimal would have strange/ inexact values
         self.price_history = [Decimal(str(_)) for _ in price_history]
@@ -53,6 +55,7 @@ class TrailingDecision:
         self.end_trailing_unit = Decimal(str(end_trailing_unit))
         self.direction = direction
         self.safety_net_detector_unit = Decimal(str(safety_net_detector_unit))
+        self.show_logs = show_logs
 
         self.absolute_start_trailing = {'UP': self.position_price + self.position_price * self.start_trailing_unit,
                                         'DOWN': self.position_price - self.position_price * self.start_trailing_unit}
@@ -134,7 +137,8 @@ class TrailingDecision:
             decision = self.price_history[-1] <= end_limit_absolute
 
             if self.price_history[-1] <= safety_net_limit_absolute:
-                self._log.warning('Safety net mode activated !')
+                if self.show_logs:
+                    self._log.warning('Safety net mode activated !')
                 return {'decision': False,
                         'reason': MessagesTrailingDecision.safety_net_case,
                         'extra': {'new_start_limit': new_start_limit,
@@ -150,7 +154,8 @@ class TrailingDecision:
             decision = self.price_history[-1] >= end_limit_absolute
 
             if self.price_history[-1] >= safety_net_limit_absolute:
-                self._log.warning('Safety net mode activated !')
+                if self.show_logs:
+                    self._log.warning('Safety net mode activated !')
                 return {'decision': False,
                         'reason': MessagesTrailingDecision.safety_net_case,
                         'extra': {'new_start_limit': new_start_limit,
@@ -160,7 +165,8 @@ class TrailingDecision:
                                   'price_history[-1]': self.price_history[-1]}}
 
         if decision:
-            self._log.info('Decided that an order should be made.')
+            if self.show_logs:
+                self._log.info('Decided that an order should be made.')
             return {'decision': True,
                     'reason': MessagesTrailingDecision.trailing_end_fulfilled,
                     'extra': {'new_start_limit': new_start_limit,
@@ -169,7 +175,8 @@ class TrailingDecision:
                               'position_price': self.position_price,
                               'price_history[-1]': self.price_history[-1]}}
         else:
-            self._log.info('Decided that an order should NOT be made.')
+            if self.show_logs:
+                self._log.info('Decided that an order should NOT be made.')
             return {'decision': False,
                     'reason': MessagesTrailingDecision.trailing_end_not_fulfilled,
                     'extra': {'new_start_limit': new_start_limit,
@@ -181,18 +188,21 @@ class TrailingDecision:
     def take(self) -> dict:
         checks = self._sanity_checks()
         if not checks[0]:
-            self._log.error(f'Failed sanity checks {checks[1]} !!')
+            if self.show_logs:
+                self._log.error(f'Failed sanity checks {checks[1]} !!')
             return {'decision': None,
                     'reason': checks[1],
                     'extra': {}}
         else:
             if self._check_limit_reached():
-                self._log.info('Limit reached, we are in the "following" mode.')
+                if self.show_logs:
+                    self._log.info('Limit reached, we are in the "following" mode.')
 
                 return self._trailing_mode()
 
             else:
-                self._log.info('Limit NOT reached, we are in the standby mode.')
+                if self.show_logs:
+                    self._log.info('Limit NOT reached, we are in the standby mode.')
                 return {'decision': False,
                         'reason': MessagesTrailingDecision.standby_case,
                         'extra': {}}
