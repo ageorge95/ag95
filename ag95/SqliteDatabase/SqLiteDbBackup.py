@@ -10,7 +10,7 @@ from logging import getLogger
 from datetime import datetime
 from traceback import format_exc
 
-class Dbbackup():
+class SqLiteDbbackup():
     def __init__(self,
                  input_filepath: AnyStr = 'database.db',
                  output_filepath: AnyStr = 'database_BAK.db',
@@ -136,11 +136,11 @@ class Dbbackup():
 if __name__ == '__main__':
     configure_logger()
     # simple backup request
-    Dbbackup().backup_db()
+    SqLiteDbbackup().backup_db()
 
     # threading daemon backup request
     # exit files are used
-    Dbbackup(output_filepath='database_BAKdaemon.db').thread_master(time_between_backups_s=5).start()
+    SqLiteDbbackup(output_filepath='database_BAKdaemon.db').thread_master(time_between_backups_s=5).start()
     with open('exit', 'w') as dummy:
         pass
 

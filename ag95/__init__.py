@@ -22,10 +22,10 @@ from .General.shorten_long_strings import shorten_long_str
 from .TimeRelated.format_from_seconds import format_from_seconds
 
 # ############## SqliteDatabase #################
-from .SqliteDatabase.DbWrapper import (DbWrapper,
-                                       ColumnDef)
-from .SqliteDatabase.DbMigration import DbMigration
-from .SqliteDatabase.DbBackup import Dbbackup
+from .SqliteDatabase.SqLiteDbWrapper import (SqLiteDbWrapper,
+                                             SqLiteColumnDef)
+from .SqliteDatabase.SqLiteDbMigration import SqLiteDbMigration
+from .SqliteDatabase.SqLiteDbBackup import SqLiteDbbackup
 
 # ############## GenericDatabase #################
 from .GenericDatabase.DbWrapper import (DbWrapper,

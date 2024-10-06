@@ -1,20 +1,20 @@
 from sqlite3 import connect
-from typing import List,\
-    AnyStr,\
-    Dict,\
-    Literal
-from datetime import datetime,\
-    timedelta
+from typing import (List,
+                    AnyStr,
+                    Dict,
+                    Literal)
+from datetime import (datetime,
+                      timedelta)
 from time import sleep
 
-class ColumnDef:
+class SqLiteColumnDef:
     def __init__(self,
                 column_name: AnyStr,
                 column_type: AnyStr):
         self.column_name = column_name
         self.column_type = column_type
 
-class DbWrapper():
+class SqLiteDbWrapper():
     def __init__(self,
                  database_path: AnyStr = 'database.db',
                  timeout: int = 60):
@@ -45,11 +45,11 @@ class DbWrapper():
 
     def create_table(self,
                      table_name: AnyStr,
-                     columns_definition: List[ColumnDef]):
-        columns_definition = [ColumnDef(column_name = 'ID',
-                                        column_type = 'INTEGER PRIMARY KEY AUTOINCREMENT'),
-                              ColumnDef(column_name='TIMESTAMP',
-                                        column_type='INTEGER')] + columns_definition
+                     columns_definition: List[SqLiteColumnDef]):
+        columns_definition = [SqLiteColumnDef(column_name = 'ID',
+                                              column_type = 'INTEGER PRIMARY KEY AUTOINCREMENT'),
+                              SqLiteColumnDef(column_name='TIMESTAMP',
+                                              column_type='INTEGER')] + columns_definition
         sql_columns_statement = ','.join([f"{_.column_name} {_.column_type}" for _ in columns_definition])
         sql_statement = f"CREATE TABLE {table_name} ({sql_columns_statement})"
 
@@ -72,7 +72,7 @@ class DbWrapper():
 
     def add_column(self,
                    table_name: AnyStr,
-                   column_def: ColumnDef):
+                   column_def: SqLiteColumnDef):
 
         cursorObj = self.con.cursor()
         cursorObj.execute(f"ALTER TABLE {table_name} ADD {column_def.column_name} {column_def.column_type}")
@@ -164,7 +164,7 @@ if __name__ == '__main__':
           ' Please create one before running this test. Use DbMigration for that.')
     sleep(2)
 
-    with DbWrapper() as DB:
+    with SqLiteDbWrapper() as DB:
         # TEST correct column names query
         result = str(DB.get_tables_columns())
         expected = str({'my_db_table_name': ['ID', 'TIMESTAMP', 'my_column_name1', 'my_column_name2']})
