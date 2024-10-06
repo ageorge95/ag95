@@ -1,16 +1,24 @@
 from sqlite3 import connect
-from typing import List,\
-    AnyStr,\
-    Dict,\
-    Literal
-from datetime import datetime,\
-    timedelta
+from typing import (List,
+                    AnyStr,
+                    Dict,
+                    Literal)
+from datetime import (datetime,
+                      timedelta)
 from time import sleep
+from warnings import warn
 
 class ColumnDef:
     def __init__(self,
                 column_name: AnyStr,
                 column_type: AnyStr):
+
+        warn(
+            "ColumnDef is deprecated and is replaced by either SqliteDb or DuckDb.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+
         self.column_name = column_name
         self.column_type = column_type
 
@@ -18,6 +26,13 @@ class DbWrapper():
     def __init__(self,
                  database_path: AnyStr = 'database.db',
                  timeout: int = 60):
+
+        warn(
+            "DbWrapper is deprecated and is replaced by either SqliteDb or DuckDb.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+
         self.database_path = database_path
         self.con = connect(database_path, timeout=timeout)
         self.con.execute('pragma journal_mode=wal')

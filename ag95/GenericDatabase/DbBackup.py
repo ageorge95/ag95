@@ -9,6 +9,7 @@ from typing import AnyStr
 from logging import getLogger
 from datetime import datetime
 from traceback import format_exc
+from warnings import warn
 
 class Dbbackup():
     def __init__(self,
@@ -16,6 +17,13 @@ class Dbbackup():
                  output_filepath: AnyStr = 'database_BAK.db',
                  print_progress: bool = False,
                  pages: int = 0):
+
+        warn(
+            "Dbbackup is deprecated and is replaced by either SqliteDb or DuckDb.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+
         self._log = getLogger()
 
         self.input_filepath = input_filepath

@@ -1,13 +1,20 @@
-from ag95 import ColumnDef,\
-    DbWrapper
-from typing import AnyStr,\
-    List
+from ag95 import (ColumnDef,
+                  DbWrapper)
+from typing import (AnyStr,
+                    List)
+from warnings import warn
 
 class DbMigration:
 
     def __init__(self,
                  database_path: AnyStr = 'database.db',
                  all_tables_def: List = None):
+
+        warn(
+            "DbMigration is deprecated and is replaced by either SqliteDb or DuckDb.",
+            DeprecationWarning,
+            stacklevel=2
+        )
 
         self.database_path = database_path
         if not all_tables_def:
