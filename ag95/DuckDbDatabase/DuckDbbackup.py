@@ -13,22 +13,11 @@ from traceback import format_exc
 class DuckDbbackup():
     def __init__(self,
                  input_filepath: AnyStr = 'database.duckdb',
-                 output_filepath: AnyStr = 'database_BAK.duckdb',
-                 print_progress: bool = False,
-                 pages: int = 0):
+                 output_filepath: AnyStr = 'database_BAK.duckdb'):
         self._log = getLogger()
 
         self.input_filepath = input_filepath
         self.output_filepath = output_filepath
-        self.print_progress = print_progress
-        self.pages = pages
-
-    def _backup_progress(self,
-                         status,
-                         remaining,
-                         total):
-        if self.print_progress:
-            self._log.info(f'DB backup - {status}: Copied {total - remaining} of {total} pages...')
 
     def backup_db(self):
         start = datetime.now()
@@ -42,33 +31,45 @@ class DuckDbbackup():
                 mkdir(path.dirname(self.output_filepath))
             except:
                 pass
-
-        # context managers do not work well with threads for some reason ...
-        # for now connect will be used outside of context
-
         try:
-            src = connect(self.input_filepath)
-            dst = connect(self.output_filepath)
+            # Connect to the existing DuckDB database
+            connection = connect(self.input_filepath)
 
-            src.backup(dst,
-                       pages=self.pages,
-                       progress=self._backup_progress)
+            # Create a backup
+            connection.execute(f"ATTACH '{self.output_filepath}' AS backup_db;")
 
-            src.close()
-            dst.close()
+            # Get a list of tables in the current database
+            tables = connection.execute("SELECT table_name FROM information_schema.tables;").fetchall()
+
+            # Loop through the tables and copy them to the backup database
+            for (table_name,) in tables:
+                connection.execute(f"CREATE TABLE backup_db.{table_name} AS SELECT * FROM {table_name};")
+
+            # Get a list of sequences
+            sequences = connection.execute("SELECT sequencename, start_value, increment_by FROM database.pg_catalog.pg_sequences;").fetchall()
+
+            # Loop through the sequences and create them in the backup database
+            for (sequence_name, start_value, increment_by) in sequences:
+                connection.execute(f"CREATE SEQUENCE backup_db.{sequence_name} START WITH {start_value} INCREMENT BY {increment_by};")
+
+            # Optionally, detach the backup database
+            connection.execute("DETACH backup_db;")
+
+            # Close the connection
+            connection.close()
 
             self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
         except:
             # try to release the connections if any exception occurred above
             try:
-                src.close()
-                dst.close()
+                connection.close()
             except:
                 # if closing the connections fails, simply do nothing
                 pass
 
             # finally route the exception to the main thread
             raise Exception(format_exc(chain=False))
+
     def vacuum_db(self):
         start = datetime.now()
         # context managers do not work well with threads for some reason ...
