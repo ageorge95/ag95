@@ -57,10 +57,10 @@ class DuckDbWrapper():
                                             column_type = f'INTEGER primary key default nextval(\'seq_{table_name}\')'),
                               DuckColumnDef(column_name='TIMESTAMP',
                                             column_type='INTEGER')] + columns_definition
-        sqlite_columns_statement = ','.join([f"{_.column_name} {_.column_type}" for _ in columns_definition])
-        sqlite_statement = f"CREATE TABLE {table_name} ({sqlite_columns_statement})"
+        sql_columns_statement = ','.join([f"{_.column_name} {_.column_type}" for _ in columns_definition])
+        sql_statement = f"CREATE TABLE {table_name} ({sql_columns_statement})"
 
-        self.con.execute(sqlite_statement)
+        self.con.execute(sql_statement)
 
     def drop_table(self,
                    table_name: AnyStr):
