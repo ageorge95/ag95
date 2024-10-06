@@ -50,11 +50,11 @@ class DbWrapper():
                                         column_type = 'INTEGER PRIMARY KEY AUTOINCREMENT'),
                               ColumnDef(column_name='TIMESTAMP',
                                         column_type='INTEGER')] + columns_definition
-        sqlite_columns_statement = ','.join([f"{_.column_name} {_.column_type}" for _ in columns_definition])
-        sqlite_statement = f"CREATE TABLE {table_name} ({sqlite_columns_statement})"
+        sql_columns_statement = ','.join([f"{_.column_name} {_.column_type}" for _ in columns_definition])
+        sql_statement = f"CREATE TABLE {table_name} ({sql_columns_statement})"
 
         cursorObj = self.con.cursor()
-        cursorObj.execute(sqlite_statement)
+        cursorObj.execute(sql_statement)
 
     def drop_table(self,
                    table_name: AnyStr):
