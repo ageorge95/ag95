@@ -2,3 +2,4 @@ concurrent_log_handler
 django
 plotly
 setuptools
+duckdb
