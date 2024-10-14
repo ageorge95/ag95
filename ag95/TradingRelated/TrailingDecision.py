@@ -1,5 +1,7 @@
 from typing import (List,
-                    Literal)
+                    Literal,
+                    Tuple,
+                    Union)
 from decimal import Decimal
 from logging import getLogger
 from dataclasses import dataclass
@@ -7,48 +9,46 @@ from ag95 import configure_logger
 
 @dataclass
 class MessagesTrailingDecision:
-    invalid_start_trailing_unit: str = 'invalid start trailing_unit'
-    invalid_end_trailing_unit: str = 'invalid end trailing unit'
-    invalid_direction: str = 'invalid direction'
-    invalid_price_history: str = 'invalid price history'
-    invalid_safety_net_detector_unit: str = 'invalid safe net detector unit'
+    INVALID_START_UNIT: str = 'Invalid start trailing unit'
+    INVALID_END_UNIT: str = 'Invalid end trailing unit'
+    INVALID_DIRECTION: str = 'Invalid direction'
+    INVALID_PRICE_HISTORY: str = 'Invalid price history'
+    INVALID_SAFETY_NET_UNIT: str = 'Invalid safety net detector unit'
 
-    only_last_value_case: str = 'only last value fulfilled'
-    standby_case: str = 'in standby mode'
-    safety_net_case: str = 'in safety mode'
+    ONLY_LAST_VALUE_CASE: str = 'Only last value fulfilled'
+    STANDBY_CASE: str = 'In standby mode'
+    SAFETY_NET_CASE: str = 'In safety mode'
 
-    trailing_end_fulfilled: str = 'trailing end condition fulfilled'
-    trailing_end_not_fulfilled: str = 'trailing end condition NOT fulfilled'
+    TRAILING_END_FULFILLED: str = 'Trailing end condition fulfilled'
+    TRAILING_END_NOT_FULFILLED: str = 'Trailing end condition NOT fulfilled'
 
 class TrailingDecision:
     def __init__(self,
-                 price_history: List[int | float | str | Decimal],
-                 position_price: int | float | str | Decimal,
-                 start_trailing_unit: int | float | str | Decimal,
-                 end_trailing_unit: int | float | str | Decimal,
+                 price_history: List[Union[int, float, str, Decimal]],
+                 position_price: Union[int, float, str, Decimal],
+                 start_trailing_unit: Union[int, float, str, Decimal],
+                 end_trailing_unit: Union[int, float, str, Decimal],
                  direction: Literal['UP', 'DOWN'],
-                 safety_net_detector_unit: int | float | str | Decimal,
+                 safety_net_detector_unit: Union[int, float, str, Decimal],
                  show_logs: bool = False):
         """
-        @param price_history:
+        Parameters
+        ----------
+        price_history : list of int, float, str, Decimal
             The list containing the history of previous prices. No limits on length.
-        @param position_price:
+        position_price : int, float, str, Decimal
             The starting price.
-        @param start_trailing_unit:
-            The parameter used to compute the start_trailing absolute value. Specified in units, ex 0.1 (=10%)
-        @param end_trailing_unit:
-            The parameter used to compute the end_trailing absolute value. Specified in units, ex 0.1 (=10%)
-        @param direction:
-            The logic can adapt to both DOWN/ UP scenarios;
-            For example if the code is used to compute the best buy-in price, the DOWN direction should be specified.
-        @param safety_net_detector_unit:
-            This safety parameter will prevent bad decisions if the price swings too much;
-            Very useful if the specified data is sparse.
+        start_trailing_unit : int, float, str, Decimal
+            The parameter used to compute the start_trailing absolute value. Specified in units, e.g., 0.1 (=10%).
+        end_trailing_unit : int, float, str, Decimal
+            The parameter used to compute the end_trailing absolute value. Specified in units, e.g., 0.1 (=10%).
+        direction : {'UP', 'DOWN'}
+            The logic can adapt to both DOWN/UP scenarios.
+        safety_net_detector_unit : int, float, str, Decimal
+            Safety parameter to prevent bad decisions if the price swings too much.
+        show_logs : bool, optional
+            Enable logging if set to True.
         """
-        if show_logs:
-            self._log = getLogger('TrailingDecision')
-
-        # str() is needed here otherwise Decimal would have strange/ inexact values
         self.price_history = [Decimal(str(_)) for _ in price_history]
         self.position_price = Decimal(str(position_price))
         self.start_trailing_unit = Decimal(str(start_trailing_unit))
@@ -57,155 +57,103 @@ class TrailingDecision:
         self.safety_net_detector_unit = Decimal(str(safety_net_detector_unit))
         self.show_logs = show_logs
 
-        self.absolute_start_trailing = {'UP': self.position_price + self.position_price * self.start_trailing_unit,
-                                        'DOWN': self.position_price - self.position_price * self.start_trailing_unit}
+        if show_logs:
+            self._log = getLogger('TrailingDecision')
+            self._log.setLevel('INFO')
 
-    def _sanity_checks(self):
-        '''
-        various sanity checks, True if no issues were found, False otherwise
-        '''
+        self.absolute_start_trailing = {
+            'UP': self.position_price * (1 + self.start_trailing_unit),
+            'DOWN': self.position_price * (1 - self.start_trailing_unit)
+        }
 
+    def _sanity_checks(self) -> Tuple[bool, str]:
         if not self.price_history:
-            return [False, MessagesTrailingDecision.invalid_price_history]
+            return False, MessagesTrailingDecision.INVALID_PRICE_HISTORY
 
         if self.start_trailing_unit <= Decimal('0'):
-            return [False, MessagesTrailingDecision.invalid_start_trailing_unit]
+            return False, MessagesTrailingDecision.INVALID_START_UNIT
 
         if self.end_trailing_unit <= Decimal('0'):
-            return [False, MessagesTrailingDecision.invalid_end_trailing_unit]
+            return False, MessagesTrailingDecision.INVALID_END_UNIT
 
         if self.safety_net_detector_unit <= Decimal('0'):
-            return [False, MessagesTrailingDecision.invalid_safety_net_detector_unit]
+            return False, MessagesTrailingDecision.INVALID_SAFETY_NET_UNIT
 
         if self.direction not in ['UP', 'DOWN']:
-            return [False, MessagesTrailingDecision.invalid_direction]
+            return False, MessagesTrailingDecision.INVALID_DIRECTION
 
-        return [True, '']
+        return True, ''
 
     def _check_limit_reached(self) -> bool:
-        '''
-        check if the limit was reached or not
-        '''
+        target = self.absolute_start_trailing[self.direction]
+        return any((_ >= target if self.direction == 'UP' else _ <= target) for _ in self.price_history)
 
+    def _calculate_trailing_limits(self, new_start_limit: Decimal) -> Tuple[Decimal, Decimal]:
         if self.direction == 'UP':
-            return any([_ >= self.absolute_start_trailing['UP'] for _ in self.price_history])
-        elif self.direction == 'DOWN':
-            return any([_ <= self.absolute_start_trailing['DOWN'] for _ in self.price_history])
+            end_limit = new_start_limit * (1 - self.end_trailing_unit)
+            safety_net_limit = end_limit * (1 - self.safety_net_detector_unit)
+        else:  # DOWN direction
+            end_limit = new_start_limit * (1 + self.end_trailing_unit)
+            safety_net_limit = end_limit * (1 + self.safety_net_detector_unit)
+        return end_limit, safety_net_limit
 
     def _trailing_mode(self) -> dict:
-        '''
-        trailing mode
-        '''
-
-        # first check if only the last value was fullfilled or not
-        if self.direction == 'UP':
-            if self.price_history[-1] == self.absolute_start_trailing['UP']:
-                return {'decision': False,
-                        'reason': MessagesTrailingDecision.only_last_value_case,
-                        'extra': {'price_history[-1]': self.price_history[-1],
-                                  'absolute_start_trailing_UP': self.absolute_start_trailing['UP']}}
-        elif self.direction == 'DOWN':
-            if self.price_history[-1] == self.absolute_start_trailing['DOWN']:
-                return {'decision': False,
-                        'reason': MessagesTrailingDecision.only_last_value_case,
-                        'extra': {'price_history[-1]': self.price_history[-1],
-                                  'absolute_start_trailing_UP': self.absolute_start_trailing['DOWN']}}
-
-        # split the price history starting from the position where the limit was reached
-        price_history_copy_reverse = self.price_history.copy()
-        price_history_copy_reverse.reverse()
-
-        for index, _ in enumerate(price_history_copy_reverse):
-            if self.direction == 'UP':
-                if _ >= self.absolute_start_trailing['UP']:
-                    index_reverse_split = index
-                    break
-            elif self.direction == 'DOWN':
-                if _ <= self.absolute_start_trailing['DOWN']:
-                    index_reverse_split = index
-                    break
-
-        if index_reverse_split != 0:
-            self.price_history = self.price_history[-index_reverse_split - 1:]
-
-        # all conditions are valid now => checking if the end limit was reached
-        # check if the safet net mode needs to be activated or not
-        if self.direction == 'UP':
-            new_start_limit = max(self.price_history)
-            end_limit_absolute = new_start_limit - new_start_limit * self.end_trailing_unit
-            safety_net_limit_absolute = end_limit_absolute - end_limit_absolute * self.safety_net_detector_unit
-            decision = self.price_history[-1] <= end_limit_absolute
-
-            if self.price_history[-1] <= safety_net_limit_absolute:
-                if self.show_logs:
-                    self._log.warning('Safety net mode activated !')
-                return {'decision': False,
-                        'reason': MessagesTrailingDecision.safety_net_case,
-                        'extra': {'new_start_limit': new_start_limit,
-                                  'end_limit_absolute': end_limit_absolute,
-                                  'safety_net_limit_absolute': safety_net_limit_absolute,
-                                  'position_price': self.position_price,
-                                  'price_history[-1]': self.price_history[-1]}}
-
-        elif self.direction == 'DOWN':
-            new_start_limit = min(self.price_history)
-            end_limit_absolute = new_start_limit + new_start_limit * self.end_trailing_unit
-            safety_net_limit_absolute = end_limit_absolute + end_limit_absolute * self.safety_net_detector_unit
-            decision = self.price_history[-1] >= end_limit_absolute
-
-            if self.price_history[-1] >= safety_net_limit_absolute:
-                if self.show_logs:
-                    self._log.warning('Safety net mode activated !')
-                return {'decision': False,
-                        'reason': MessagesTrailingDecision.safety_net_case,
-                        'extra': {'new_start_limit': new_start_limit,
-                                  'end_limit_absolute': end_limit_absolute,
-                                  'safety_net_limit_absolute': safety_net_limit_absolute,
-                                  'position_price': self.position_price,
-                                  'price_history[-1]': self.price_history[-1]}}
-
-        if decision:
-            if self.show_logs:
-                self._log.info('Decided that an order should be made.')
-            return {'decision': True,
-                    'reason': MessagesTrailingDecision.trailing_end_fulfilled,
-                    'extra': {'new_start_limit': new_start_limit,
-                              'end_limit_absolute': end_limit_absolute,
-                              'safety_net_limit_absolute': safety_net_limit_absolute,
-                              'position_price': self.position_price,
-                              'price_history[-1]': self.price_history[-1]}}
-        else:
-            if self.show_logs:
-                self._log.info('Decided that an order should NOT be made.')
+        price = self.price_history[-1]
+        if self.direction == 'UP' and price == self.absolute_start_trailing['UP'] or \
+           self.direction == 'DOWN' and price == self.absolute_start_trailing['DOWN']:
             return {'decision': False,
-                    'reason': MessagesTrailingDecision.trailing_end_not_fulfilled,
-                    'extra': {'new_start_limit': new_start_limit,
-                              'end_limit_absolute': end_limit_absolute,
-                              'safety_net_limit_absolute': safety_net_limit_absolute,
-                              'position_price': self.position_price,
-                              'price_history[-1]': self.price_history[-1]}}
+                    'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE,
+                    'extra': {
+                        'price_history[-1]': price,
+                        'absolute_start_trailing': self.absolute_start_trailing[self.direction]
+                    }}
+
+        new_start_limit = max(self.price_history) if self.direction == 'UP' else min(self.price_history)
+        end_limit, safety_net_limit = self._calculate_trailing_limits(new_start_limit)
+        decision = price <= end_limit if self.direction == 'UP' else price >= end_limit
+
+        if (price <= safety_net_limit if self.direction == 'UP' else price >= safety_net_limit):
+            if self.show_logs:
+                self._log.warning('Safety net mode activated!')
+            return {
+                'decision': False,
+                'reason': MessagesTrailingDecision.SAFETY_NET_CASE,
+                'extra': {
+                    'new_start_limit': new_start_limit,
+                    'end_limit': end_limit,
+                    'safety_net_limit': safety_net_limit,
+                    'position_price': self.position_price,
+                    'price_history[-1]': price
+                }
+            }
+
+        return {
+            'decision': decision,
+            'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED if decision else MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED,
+            'extra': {
+                'new_start_limit': new_start_limit,
+                'end_limit': end_limit,
+                'safety_net_limit': safety_net_limit,
+                'position_price': self.position_price,
+                'price_history[-1]': price
+            }
+        }
 
     def take(self) -> dict:
-        checks = self._sanity_checks()
-        if not checks[0]:
+        valid, reason = self._sanity_checks()
+        if not valid:
             if self.show_logs:
-                self._log.error(f'Failed sanity checks {checks[1]} !!')
-            return {'decision': None,
-                    'reason': checks[1],
-                    'extra': {}}
-        else:
-            if self._check_limit_reached():
-                if self.show_logs:
-                    self._log.info('Limit reached, we are in the "following" mode.')
+                self._log.error(f'Failed sanity checks: {reason}')
+            return {'decision': None, 'reason': reason, 'extra': {}}
 
-                return self._trailing_mode()
+        if self._check_limit_reached():
+            if self.show_logs:
+                self._log.info('Limit reached, following mode.')
+            return self._trailing_mode()
 
-            else:
-                if self.show_logs:
-                    self._log.info('Limit NOT reached, we are in the standby mode.')
-                return {'decision': False,
-                        'reason': MessagesTrailingDecision.standby_case,
-                        'extra': {}}
+        if self.show_logs:
+            self._log.info('Limit not reached, standby mode.')
+        return {'decision': False, 'reason': MessagesTrailingDecision.STANDBY_CASE, 'extra': {}}
 
 if __name__ == '__main__':
 
@@ -221,35 +169,35 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': None,
-                                              'reason': MessagesTrailingDecision.invalid_price_history}],
+                                              'reason': MessagesTrailingDecision.INVALID_PRICE_HISTORY}],
         [{'price_history': [1, 1.1, 1.2],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': -0.03}, {'decision': None,
-                                              'reason': MessagesTrailingDecision.invalid_safety_net_detector_unit}],
+                                              'reason': MessagesTrailingDecision.INVALID_SAFETY_NET_UNIT}],
         [{'price_history': [1, 1.1, 1.2],
           'position_price': 1,
           'start_trailing_unit': -0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': None,
-                                              'reason': MessagesTrailingDecision.invalid_start_trailing_unit}],
+                                              'reason': MessagesTrailingDecision.INVALID_START_UNIT}],
         [{'price_history': [1, 1.1, 1.2],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': -0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': None,
-                                              'reason': MessagesTrailingDecision.invalid_end_trailing_unit}],
+                                              'reason': MessagesTrailingDecision.INVALID_END_UNIT}],
         [{'price_history': [1, 1.1, 1.2],
           'position_price': 1,
           'start_trailing_unit': -0.1,
           'end_trailing_unit': -0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': None,
-                                              'reason': MessagesTrailingDecision.invalid_start_trailing_unit}],
+                                              'reason': MessagesTrailingDecision.INVALID_START_UNIT}],
 
         [{'price_history': [1, 1.1, 1.2],
           'position_price': 1,
@@ -257,21 +205,21 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'UPY',
           'safety_net_detector_unit': 0.03}, {'decision': None,
-                                              'reason': MessagesTrailingDecision.invalid_direction}],
+                                              'reason': MessagesTrailingDecision.INVALID_DIRECTION}],
         [{'price_history': [1, 1.1, 1.2],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWNL',
           'safety_net_detector_unit': 0.03}, {'decision': None,
-                                              'reason': MessagesTrailingDecision.invalid_direction}],
+                                              'reason': MessagesTrailingDecision.INVALID_DIRECTION}],
         [{'price_history': [1, 1.1, 1.2],
           'position_price': 1,
           'start_trailing_unit': -0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UPY',
           'safety_net_detector_unit': 0.03}, {'decision': None,
-                                              'reason': MessagesTrailingDecision.invalid_start_trailing_unit}],
+                                              'reason': MessagesTrailingDecision.INVALID_START_UNIT}],
 
         # ########################
         # check the UP direction
@@ -283,14 +231,14 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.only_last_value_case}],
+                                              'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE}],
         [{'price_history': [1, 1.01, 1.02, 1.03, 1.04, 1.05, 1.1, 1.1],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.only_last_value_case}],
+                                              'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE}],
 
         # invalid end trailing case
         [{'price_history': [1, 1.1, 1.0451],
@@ -299,21 +247,21 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
         [{'price_history': [1, 1.1, 1.046],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
         [{'price_history': [1, 1.1, 1.055],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
 
         # valid end trailing case
         [{'price_history': [1, 1.1, 1.045],
@@ -322,7 +270,7 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': True,
-                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED}],
 
         # standby case
         [{'price_history': [1, 1.01, 1.05, 1.08, 1.045, 1.01, 0.99, 0.7, 0.5],
@@ -331,21 +279,21 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.standby_case}],
+                                              'reason': MessagesTrailingDecision.STANDBY_CASE}],
         [{'price_history': [0.8, 0.85, 0.9, 1.08, 1.045, 1.01, 0.99, 0.7, 0.5],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.standby_case}],
+                                              'reason': MessagesTrailingDecision.STANDBY_CASE}],
         [{'price_history': [0.8, 0.85, 0.9, 0.95],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.standby_case}],
+                                              'reason': MessagesTrailingDecision.STANDBY_CASE}],
 
         # safety net case
         [{'price_history': [1, 1.01, 1.05, 1.08, 1.045, 1.1, 1.01, 0.99, 0.7, 0.5],
@@ -354,21 +302,21 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.safety_net_case}],
+                                              'reason': MessagesTrailingDecision.SAFETY_NET_CASE}],
         [{'price_history': [0.8, 0.85, 0.9, 1.08, 1.045, 1.01, 0.99, 0.7, 1.1, 0.5],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.safety_net_case}],
+                                              'reason': MessagesTrailingDecision.SAFETY_NET_CASE}],
         [{'price_history': [0.5, 0.8, 1.1, 1.02],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': True,
-                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED}],
 
         # ########################
         # check the DOWN direction
@@ -380,14 +328,14 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.only_last_value_case}],
+                                              'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE}],
         [{'price_history': [1, 0.99, 0.98, 0.97, 0.96, 0.95, 0.9],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.only_last_value_case}],
+                                              'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE}],
 
         # invalid end trailing case
         [{'price_history': [1, 0.9, 0.9449],
@@ -396,21 +344,21 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
         [{'price_history': [1, 0.9, 0.944],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
         [{'price_history': [1, 0.9, 0.935],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
 
         # valid end trailing case
         [{'price_history': [1, 0.9, 0.945],
@@ -419,7 +367,7 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': True,
-                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED}],
 
         # standby case
         [{'price_history': [1, 1.01, 1.05, 1.08, 1.045, 1.01],
@@ -428,21 +376,21 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.standby_case}],
+                                              'reason': MessagesTrailingDecision.STANDBY_CASE}],
         [{'price_history': [1, 1.01, 1.05, 1.08, 1.045, 1.1, 1.2, 1.3, 0.91, 0.905],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.standby_case}],
+                                              'reason': MessagesTrailingDecision.STANDBY_CASE}],
         [{'price_history': [1, 2, 3, 4],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.standby_case}],
+                                              'reason': MessagesTrailingDecision.STANDBY_CASE}],
 
         # safety net case
         [{'price_history': [1, 1.01, 0.9, 1.05, 1.08, 1.045, 1.01],
@@ -451,28 +399,28 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.safety_net_case}],
+                                              'reason': MessagesTrailingDecision.SAFETY_NET_CASE}],
         [{'price_history': [1, 1.01, 0.9, 1.05, 1.08, 1.045, 1.01, 0.95],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': True,
-                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED}],
         [{'price_history': [1, 1.01, 1.05, 1.08, 1.045, 1.1, 1.2, 0.9, 1.3, 0.91, 0.905],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
         [{'price_history': [1, 2, 3, 0.9, 0.91, 0.92, 0.93, 0.94, 0.95],
           'position_price': 1,
           'start_trailing_unit': 0.1,
           'end_trailing_unit': 0.05,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': True,
-                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED}],
 
         # extra random tests
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997],
@@ -481,70 +429,70 @@ if __name__ == '__main__':
           'end_trailing_unit': 0.03,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.only_last_value_case}],
+                                              'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 0.85169464],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'DOWN',
-          'safety_net_detector_unit': 0.03}, {'decision': True,
-                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+          'safety_net_detector_unit': 0.03}, {'decision': False,
+                                              'reason': MessagesTrailingDecision.SAFETY_NET_CASE}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 0.85169463],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'DOWN',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.SAFETY_NET_CASE}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.only_last_value_case}],
+                                              'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': True,
-                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421465],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.trailing_end_not_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464, 1.1195882008],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.safety_net_case}],
+                                              'reason': MessagesTrailingDecision.SAFETY_NET_CASE}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464, 1.1195882007],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': False,
-                                              'reason': MessagesTrailingDecision.safety_net_case}],
+                                              'reason': MessagesTrailingDecision.SAFETY_NET_CASE}],
         [{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464, 1.1195882009],
           'position_price': 1.0084,
           'start_trailing_unit': 0.18,
           'end_trailing_unit': 0.03,
           'direction': 'UP',
           'safety_net_detector_unit': 0.03}, {'decision': True,
-                                              'reason': MessagesTrailingDecision.trailing_end_fulfilled}],
+                                              'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED}],
 
     ]:
         result = TrailingDecision(**test[0]).take()
@@ -558,9 +506,9 @@ if __name__ == '__main__':
 
     # quick check, uncomment and modify
     # from pprint import pprint
-    # pprint(TrailingDecision(price_history=[73.1],
-    #                         position_price=89.4,
-    #                         start_trailing_unit=0.18,
-    #                         end_trailing_unit=0.03,
-    #                         direction='DOWN',
-    #                         safety_net_detector_unit=0.03).take())
+    # pprint(TrailingDecision(**{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 0.85169464],
+    #                            'position_price': 1.0084,
+    #                            'start_trailing_unit': 0.18,
+    #                            'end_trailing_unit': 0.03,
+    #                            'direction': 'DOWN',
+    #                            'safety_net_detector_unit': 0.03}).take())
