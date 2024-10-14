@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.3.38'
+VERSION = '0.3.39'
 DESCRIPTION = 'ag95 scripts collection'
 LONG_DESCRIPTION = 'Various scripts that can be used in all kinds of python projects.'
 
