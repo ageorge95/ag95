@@ -108,7 +108,12 @@ class TrailingDecision:
                         'absolute_start_trailing': self.absolute_start_trailing[self.direction]
                     }}
 
-        new_start_limit = max(self.price_history) if self.direction == 'UP' else min(self.price_history)
+        # Dynamically adjust the trailing start point
+        if self.direction == 'UP':
+            new_start_limit = max(max(self.price_history), self.absolute_start_trailing['UP'])
+        else:  # DOWN direction
+            new_start_limit = min(min(self.price_history), self.absolute_start_trailing['DOWN'])
+
         end_limit, safety_net_limit = self._calculate_trailing_limits(new_start_limit)
         decision = price <= end_limit if self.direction == 'UP' else price >= end_limit
 
