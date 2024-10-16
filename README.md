@@ -1,5 +1,5 @@
 # ag95
-Repository for common code used in some of my other repos.
+Repository for common code used in some of my other repos. Compatible with python 3.13.x
 
 # Deploy this code in your repositories
 You can quickly access the stuff by
