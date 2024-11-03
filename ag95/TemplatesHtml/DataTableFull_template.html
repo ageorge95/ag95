@@ -17,6 +17,15 @@
         background-color: #fff;
       }
 
+      details {
+	    max-width: 100%; /* The table cannot expand more than 100% to accommodate for the details text. */
+	  }
+	  details p {
+	  	word-wrap: break-word; /* Forces text to wrap to the next line */
+	  	white-space: normal; /* Prevents text from being in a single line */
+	  	margin: 0;
+	  }
+
       {% for table in tables %}
         table#{{table.table_id}}.dataTable tbody tr:hover {
           background-color: #ffa;
