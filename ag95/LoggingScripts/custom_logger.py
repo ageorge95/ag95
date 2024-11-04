@@ -64,7 +64,8 @@ def configure_logger(log_name : str = "runtime_log.log",
     fh = ConcurrentRotatingFileHandler(log_name,
                                        mode='a',
                                        maxBytes=maxBytes,
-                                       backupCount=backupCount)
+                                       backupCount=backupCount,
+                                       use_gzip=True)
     fh.setLevel(DEBUG)
     fh.setFormatter(Formatter('%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d -> %(name)s - %(funcName)s] ___ %(message)s'))
 
@@ -107,7 +108,8 @@ def configure_loggers(log_names : List[str] = ("main_logger.log"),
         fh = ConcurrentRotatingFileHandler(log_name,
                                            mode='a',
                                            maxBytes=maxBytes,
-                                           backupCount=backupCount)
+                                           backupCount=backupCount,
+                                           use_gzip=True)
         fh.setLevel(DEBUG)
         fh.setFormatter(Formatter('%(asctime)s,%(msecs)d %(levelname)-4s [%(filename)s:%(lineno)d -> %(name)s - %(funcName)s] ___ %(message)s'))
 
