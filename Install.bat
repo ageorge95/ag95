@@ -1,10 +1,11 @@
 @echo off
 
-set root=%cd%
+set python=%1
+IF "%python%"=="" set python="python"
 
 :: installation
 
-python -m venv venv
+%python% -m venv venv
 :: Windows doesn't allow the creation of symlinks without special priviledges, so hardlinks are created instead.
 mklink /h activate.bat venv\Scripts\activate.bat
 
