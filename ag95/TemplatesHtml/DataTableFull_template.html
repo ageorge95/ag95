@@ -51,30 +51,40 @@
 
   <body>
   <script>
-    $(document).ready( function () {
-      {% for table in tables %}
-        var table = $('#{{table.table_id}}').DataTable({
-            "ordering": true,
-            "order": [[{{table.order.columnID}}, "{{table.order.direction}}"]],
-            "orderCellsTop": true,
-            "deferRender": true,
-            "autoWidth": false,
-            "fixedHeader": true,
-            "pageLength": {{table.pageLength}},
-            "pagingType": "full_numbers",
-            columnDefs: [
-              { targets: {{table.restrict_width_columns}}, width: '2%' }
-            ]
-        });
-      {% endfor %}
+  $(document).ready(function () {
+    {% for table in tables %}
+      var table = $('#{{table.table_id}}').DataTable({
+          "ordering": true,
+          "order": [[{{table.order.columnID}}, "{{table.order.direction}}"]],
+          "orderCellsTop": true,
+          "deferRender": true,
+          "autoWidth": false,
+          "fixedHeader": true,
+          "pageLength": {{table.pageLength}},
+          "pagingType": "full_numbers",
+          columnDefs: [
+            { targets: {{table.restrict_width_columns}}, width: '2%' }
+          ]
+      });
 
-      var doc = $(".plotly-graph-div");
+      // Ensure Plotly graphs are resized after the table is drawn
+      table.on('draw', function() {
+        var doc = $(".plotly-graph-div");
         for (var i = 0; i < doc.length; i++) {
             Plotly.relayout(doc[i], {autosize: true});
         }
-    });
+      });
+    {% endfor %}
 
-  </script>
+    // Resize Plotly graphs immediately after table initialization (on page load)
+    var doc = $(".plotly-graph-div");
+    for (var i = 0; i < doc.length; i++) {
+        Plotly.relayout(doc[i], {autosize: true});
+    }
+
+  });
+</script>
+
 
   {% for table in tables %}
 
