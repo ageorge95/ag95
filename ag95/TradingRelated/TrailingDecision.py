@@ -1014,6 +1014,22 @@ if __name__ == '__main__':
             self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
             self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
 
+        def test_case_0047(self):
+            input_data = {
+                'price_history': [100, 100, 100],
+                'position_price': 100,
+                'start_trailing_unit': 0.1,
+                'end_trailing_unit': 0.05,
+                'direction': 'DOWN',
+                'safety_net_detector_unit': -0.5
+            }
+            expected_output = {
+                'decision': None,
+                'reason': MessagesTrailingDecision.INVALID_SAFETY_NET_UNIT
+            }
+            result = TrailingDecision(**input_data).take()
+            self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
+            self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
 
     unittest.main(verbosity=2)
 
