@@ -100,12 +100,11 @@ class TrailingDecision:
         price = self.price_history[-1]
         if self.direction == 'UP' and price == self.absolute_start_trailing['UP'] or \
            self.direction == 'DOWN' and price == self.absolute_start_trailing['DOWN']:
-            return {'decision': False,
-                    'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE,
-                    'extra': {
-                        'price_history[-1]': price,
-                        'absolute_start_trailing': self.absolute_start_trailing[self.direction]
-                    }}
+            return {
+                'decision': False,
+                'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE,
+                'extra': self.extra_return
+            }
 
         # Dynamically adjust the trailing start point
         if self.direction == 'UP':
@@ -122,33 +121,44 @@ class TrailingDecision:
             return {
                 'decision': False,
                 'reason': MessagesTrailingDecision.SAFETY_NET_CASE,
-                'extra': {
+                'extra': self.extra_return | {
                     'new_start_limit': new_start_limit,
                     'end_limit': end_limit,
-                    'safety_net_limit': safety_net_limit,
-                    'position_price': self.position_price,
-                    'price_history[-1]': price
+                    'safety_net_limit': safety_net_limit
                 }
             }
 
         return {
             'decision': decision,
             'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED if decision else MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED,
-            'extra': {
+            'extra': self.extra_return | {
                 'new_start_limit': new_start_limit,
                 'end_limit': end_limit,
-                'safety_net_limit': safety_net_limit,
-                'position_price': self.position_price,
-                'price_history[-1]': price
+                'safety_net_limit': safety_net_limit
             }
         }
 
     def take(self) -> dict:
         valid, reason = self._sanity_checks()
+        if valid:
+            self.extra_return = {
+                'price_history[-1]': self.price_history[-1],
+                'initial_absolute_start_trailing': self.absolute_start_trailing[self.direction],
+                'position_price': self.position_price
+            }
+        else:
+            self.extra_return = {
+                'position_price': self.position_price
+            }
+
         if not valid:
             if self.show_logs:
                 self._log.error(f'Failed sanity checks: {reason}')
-            return {'decision': None, 'reason': reason, 'extra': {}}
+            return {
+                'decision': None,
+                'reason': reason,
+                'extra': self.extra_return
+            }
 
         if self._check_limit_reached():
             if self.show_logs:
@@ -157,7 +167,11 @@ class TrailingDecision:
 
         if self.show_logs:
             self._log.info('Limit not reached, standby mode.')
-        return {'decision': False, 'reason': MessagesTrailingDecision.STANDBY_CASE, 'extra': {}}
+        return {
+            'decision': False,
+            'reason': MessagesTrailingDecision.STANDBY_CASE,
+            'extra': self.extra_return
+        }
 
 if __name__ == '__main__':
     import unittest
@@ -1003,11 +1017,11 @@ if __name__ == '__main__':
 
     unittest.main(verbosity=2)
 
-    # quick check, uncomment and modify
-    # from pprint import pprint
-    # pprint(TrailingDecision(**{'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 0.85169464],
-    #                            'position_price': 1.0084,
-    #                            'start_trailing_unit': 0.18,
-    #                            'end_trailing_unit': 0.03,
-    #                            'direction': 'DOWN',
-    #                            'safety_net_detector_unit': 0.03}).take())
+# quick check, uncomment and modify
+# from pprint import pprint
+# pprint(TrailingDecision(**{'price_history': [10],
+#                            'position_price': 10,
+#                            'start_trailing_unit': 0.1,
+#                            'end_trailing_unit': 0.03,
+#                            'direction': 'DOWN',
+#                            'safety_net_detector_unit': 0.03}).take())
