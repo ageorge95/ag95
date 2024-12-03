@@ -3,3 +3,4 @@ django
 plotly
 setuptools
 duckdb
+keyring

@@ -53,3 +53,8 @@ from .DataManipulation.datetime_lists_normalise import datetime_lists_normalise
 # ############## TradingRelated #################
 from .TradingRelated.TrailingDecision import (TrailingDecision,
                                               MessagesTrailingDecision)
+
+# ############## Cryptography #################
+from .WindowsCredentials.windows_credentials import (save_password,
+                                                     get_password,
+                                                     delete_password)
