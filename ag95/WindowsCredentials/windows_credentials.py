@@ -11,7 +11,7 @@ def get_password(service_name, username):
     try:
         password = keyring.get_password(service_name, username)
         if password:
-            print("Password retrieved successfully.")
+            # print("Password retrieved successfully.")
             return password
         else:
             print("No password found for the given service and username.")
