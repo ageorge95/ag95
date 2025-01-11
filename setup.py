@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.3.48'
+VERSION = '0.3.49'
 DESCRIPTION = 'ag95 scripts collection'
 LONG_DESCRIPTION = 'Various scripts that can be used in all kinds of python projects.'
 
@@ -18,7 +18,8 @@ setup(
         'django',
         'plotly',
         'duckdb',
-        'keyring'
+        'keyring',
+        'requests'
     ],  # add any additional packages that
     # needs to be installed along with your package. Eg: 'caer'
     keywords=['python', 'ag95']

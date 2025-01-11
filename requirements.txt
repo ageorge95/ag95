@@ -4,3 +4,4 @@ plotly
 setuptools
 duckdb
 keyring
+requests

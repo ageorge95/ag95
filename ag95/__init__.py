@@ -58,3 +58,6 @@ from .TradingRelated.TrailingDecision import (TrailingDecision,
 from .WindowsCredentials.windows_credentials import (save_password,
                                                      get_password,
                                                      delete_password)
+
+# ############## IoT #################
+from .IoT.SmartThings import SmartThingsControl
