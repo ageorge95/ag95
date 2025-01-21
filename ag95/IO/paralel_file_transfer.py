@@ -54,6 +54,9 @@ def _copy_chunk(source_filepath, dest_filepath,
         src.seek(start_position_b)
         dest.seek(start_position_b)
 
+        with progress_print_lock:
+            print(f"Thread {thread_id} started successfully")
+
         bytes_transferred = 0
         start_time = time.time()  # To track the time for rate limiting
 
@@ -115,7 +118,7 @@ def single_file_transfer(source_filepath, destination_filepath,
 
         print(f'Starting the thread pool for a file with size[bytes] {source_size_b}'
               f' and a chunk size[bytes] of {chunk_size_b}'
-              f' allocated to {num_threads} threads.')
+              f' allocated to each of the {num_threads} threads.')
 
         # Load saved progress, if any
         previous_progress = _load_progress(progress_filename, num_threads)
