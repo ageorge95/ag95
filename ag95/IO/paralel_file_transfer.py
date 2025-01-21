@@ -14,7 +14,7 @@ def _copy_chunk(source_path, dest_path,
                lock=None):
 
     with (open(source_path, 'rb') as src,
-          open(dest_path, 'r+b') as dest):
+          open(dest_path, 'r+b' if os.path.isfile('dest_path') else 'w+b') as dest):
         src.seek(start)
         dest.seek(start)
 
