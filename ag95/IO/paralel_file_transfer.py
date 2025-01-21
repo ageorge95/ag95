@@ -55,7 +55,10 @@ def _copy_chunk(source_path, dest_path,
             print(f"Fragment {fragment_id}: [{'-' * int(progress // 2):<50}] {progress:.2f}% - Done!")
 
 
-def single_file_transfer(source_path, destination_path, num_threads=4, max_speed_mb_s=None):
+def single_file_transfer(source_path, destination_path,
+                         num_threads=4,
+                         max_speed_mb_s=None,
+                         move=False):
     # Convert max speed from MB/s to bytes per second
     max_speed_bytes_s = max_speed_mb_s * 1024 * 1024 if max_speed_mb_s else None
 
@@ -92,7 +95,7 @@ def single_file_transfer(source_path, destination_path, num_threads=4, max_speed
     with lock:  # Final completion message, synchronized
         print("\nFile transfer completed with parallel chunks.")
 
-    os.remove(source_path)  # Remove the source file after copying
+    if move: os.remove(source_path)  # Remove the source file after copying
 
 if __name__ == '__main__':
     source_path = r"<some_input_filepath>"
@@ -101,7 +104,8 @@ if __name__ == '__main__':
     single_file_transfer(source_path,
                          destination_path,
                          num_threads=4,
-                         # max_speed_mb_s=max_speed
+                         # max_speed_mb_s=max_speed,
+                         # move=True
                          )
 
     print('MANUAL assessment required !')
