@@ -62,3 +62,6 @@ from .WindowsCredentials.windows_credentials import (save_password,
 # ############## IoT #################
 from .IoT.SmartThings import SmartThingsControl
 from .IoT.TuyaCloud import TuyaCloudControl
+
+# ############## IO #################
+from .IO.paralel_file_transfer import single_file_transfer
