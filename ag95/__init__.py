@@ -18,6 +18,7 @@ from .General.stdin_watcher import stdin_watcher
 from .General.filepaths_from_folderpath import extract_filenames_from_filepath
 from .General.filepaths_from_folderpath import extract_filenames_from_folderpath
 from .General.shorten_long_strings import shorten_long_str
+from .General.timer_context import TimerContext
 
 # ############## TimeRelated #################
 from .TimeRelated.format_from_seconds import format_from_seconds
