@@ -8,19 +8,43 @@ setup(
     name="ag95",
     version=VERSION,
     author="ageorge95",
-    # author_email="some_email@provider.com",
+    author_email="arteni.george.daniel@gmail.com",
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
     packages=find_packages(),
     include_package_data=True,
-    install_requires=[
-        'concurrent_log_handler',
-        'django',
-        'plotly',
-        'duckdb',
-        'keyring',
-        'requests'
-    ],  # add any additional packages that
-    # needs to be installed along with your package. Eg: 'caer'
+    install_requires=[],
+    extras_require={
+        "DecimalScripts": [],
+        "LoggingScripts": [
+            'concurrent_log_handler',
+        ],
+        "Threading": [],
+        "General": [],
+        "TimeRelated": [],
+        "SqliteDatabase": [
+            'concurrent_log_handler'
+        ],
+        "GenericDatabase": [
+            'concurrent_log_handler'
+        ],
+        "DuckDbDatabase": [
+            'concurrent_log_handler',
+            'duckdb'
+        ],
+        "PlotlyRelated": [
+            'plotly'
+        ],
+        "TemplatesHtml": [],
+        "DataManipulation": [],
+        "TradingRelated": [],
+        "WindowsCredentials": [
+            'keyring'
+        ],
+        "IoT": [
+            'requests'
+        ],
+        "IO": []
+    },
     keywords=['python', 'ag95']
 )
