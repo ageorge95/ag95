@@ -16,6 +16,7 @@ from .General.singleton_metaclass import (Singleton_with_cache,
                                           Singleton_without_cache)
 from .General.stdin_watcher import stdin_watcher
 from .General.filepaths_from_folderpath import extract_filenames_from_filepath
+from .General.filepaths_from_folderpath import extract_filenames_from_folderpath
 from .General.shorten_long_strings import shorten_long_str
 
 # ############## TimeRelated #################
