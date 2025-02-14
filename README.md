@@ -4,11 +4,19 @@ Repository for common code used in some of my other repos. Compatible with pytho
 # Deploy this code in your repositories
 You can quickly access the stuff by
 
-  - use this repo as a submodule
+  - use this repo as a submodule (instructions on how to setup git sub-modules can be found here: https://git-scm.com/book/en/v2/Git-Tools-Submodules)
   
-  - use this repo as a package via `python -m pip install git+https://github.com/ageorge95/ag95.git`
+  - install this repo as a package with pip
   
-    - to upgrade the package you would have to run `python -m pip install --upgrade git+https://github.com/ageorge95/ag95.git`
+    - to install the barebone package with no extra dependencies (not recommended as some stuff may not work in this way) you can use `python -m pip install git+https://github.com/ageorge95/ag95.git`
+   
+    - to install the package with extra dependencies specific to your usecase you can use a syntax like this (for older pip versions) `python -m pip install git+https://github.com/ageorge95/ag95.git#egg=ag95[DecimalScripts,SqliteDatabase]` or (for newer pip versions) `python -m pip install "ag95[DecimalScripts,SqliteDatabase] @ git+https://github.com/ageorge95/ag95.git"`
+  
+    - to upgrade the package you would simply have to use the commands above and add the `--upgrade` flag, for example: `python -m pip install --upgrade git+https://github.com/ageorge95/ag95.git`
+   
+    - NOTE1: the `extras_require` mechanism was recently introduced as ag95 has grown and contains lots of different parts and some of them do not even require an external dependency while some require multiple dependencies, which slowed time the installation of ag95 considerably. Now, with `extras_require`, you have to specify exactly which part/ parts of ag95 you will plan to use => the installation is as fast as possible for your particular use cases.
+   
+    - NOTE2: in the future I might provide wheels for this package, but for now there is not a great need for them.
 
 # Support
 Found this project useful? Send your ❤ in any form you can 🙂. Please contact me if you donated and want to be added to the contributors list !
