@@ -1,6 +1,185 @@
 # ag95
 Repository for common code used in some of my other repos. Compatible with python 3.13.x
 
+Currently ag95 has the following modules and utilities.:
+
+<table border="1" cellspacing="0" cellpadding="5">
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Utility</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="3">DecimalScripts</td>
+      <td>decimals_places</td>
+      <td>Returns the number of decimal places for a given float.</td>
+    </tr>
+    <tr>
+      <td>nr_normalisation</td>
+      <td>Normalizes a float to a specified number of decimal places without rounding.</td>
+    </tr>
+    <tr>
+      <td>round_[up/down]_closer</td>
+      <td>Rounds a float up or down to its last decimal position.</td>
+    </tr>
+    <!-- LoggingScripts group -->
+    <tr>
+      <td>LoggingScripts</td>
+      <td>configure_[logger/loggers]</td>
+      <td>Provides a custom logging solution with numerous quality-of-life features.</td>
+    </tr>
+    <!-- Threading group -->
+    <tr>
+      <td>Threading</td>
+      <td>ThreadMonitor</td>
+      <td>Monitors a list of threads until they complete, then notifies upon completion.</td>
+    </tr>
+    <!-- General group -->
+    <tr>
+      <td rowspan="5">General</td>
+      <td>extract_filenames_from_folderpath</td>
+      <td>Recursively extracts filenames from a folder, filtering by file extension.</td>
+    </tr>
+    <tr>
+      <td>shorten_long_str</td>
+      <td>Shortens long strings by inserting an asterisk in the middle.</td>
+    </tr>
+    <tr>
+      <td>Singleton_[with/without]_cache</td>
+      <td>Provides a metaclass for creating singleton classes with optional caching capabilities.</td>
+    </tr>
+    <tr>
+      <td>stdin_watcher</td>
+      <td>Monitors standard input and triggers configurable actions based on specified keywords.</td>
+    </tr>
+    <tr>
+      <td>TimerContext</td>
+      <td>Context manager for measuring the execution time of code blocks.</td>
+    </tr>
+    <!-- TimeRelated group -->
+    <tr>
+      <td>TimeRelated</td>
+      <td>format_from_seconds</td>
+      <td>Formats elapsed time (in seconds) into a human-readable string with configurable granularity.</td>
+    </tr>
+    <!-- SqliteDatabase group -->
+    <tr>
+      <td rowspan="3">SqliteDatabase</td>
+      <td>SqLiteDbbackup</td>
+      <td>Creates backups of SQLite databases.</td>
+    </tr>
+    <tr>
+      <td>SqLiteDbMigration</td>
+      <td>Performs schema migrations on SQLite databases.</td>
+    </tr>
+    <tr>
+      <td>SqLiteDbWrapper</td>
+      <td>Offers utilities for managing and manipulating SQLite databases.</td>
+    </tr>
+    <!-- GenericDatabase group -->
+    <tr>
+      <td rowspan="3">GenericDatabase</td>
+      <td>Dbbackup</td>
+      <td>Creates backups of generic databases (e.g., SQLite).</td>
+    </tr>
+    <tr>
+      <td>DbMigration</td>
+      <td>Performs schema migrations on generic databases (e.g., SQLite).</td>
+    </tr>
+    <tr>
+      <td>DbWrapper</td>
+      <td>Provides utilities for managing and manipulating generic databases (e.g., SQLite).</td>
+    </tr>
+    <!-- DuckDbDatabase group -->
+    <tr>
+      <td rowspan="3">DuckDbDatabase</td>
+      <td>DuckDbbackup</td>
+      <td>Creates backups of DuckDB databases.</td>
+    </tr>
+    <tr>
+      <td>DuckDbMigration</td>
+      <td>Performs schema migrations on DuckDB databases.</td>
+    </tr>
+    <tr>
+      <td>DuckDbWrapper</td>
+      <td>Offers utilities for managing and manipulating DuckDB databases.</td>
+    </tr>
+    <!-- PlotlyRelated group -->
+    <tr>
+      <td rowspan="5">PlotlyRelated</td>
+      <td>SinglePlot</td>
+      <td>Constructs a Plotly figure featuring a single plot.</td>
+    </tr>
+    <tr>
+      <td>MultiRowPlot</td>
+      <td>Creates a Plotly figure with multiple subplots arranged in rows.</td>
+    </tr>
+    <tr>
+      <td>BarPlotDef</td>
+      <td>Definition class for configuring bar plots in Plotly.</td>
+    </tr>
+    <tr>
+      <td>HistogramPlotDef</td>
+      <td>Definition class for configuring histogram plots in Plotly.</td>
+    </tr>
+    <tr>
+      <td>ScatterPlotDef</td>
+      <td>Definition class for configuring scatter plots in Plotly.</td>
+    </tr>
+    <!-- TemplatesHtml group -->
+    <tr>
+      <td>TemplatesHtml</td>
+      <td>export_html_templates</td>
+      <td>Exports ready-to-use HTML templates, particularly useful for Django frameworks.</td>
+    </tr>
+    <!-- DataManipulation group -->
+    <tr>
+      <td>DataManipulation</td>
+      <td>datetime_lists_normalise</td>
+      <td>Normalizes multiple datetime lists into a unified list with configurable constraints.</td>
+    </tr>
+    <!-- TradingRelated group -->
+    <tr>
+      <td>TradingRelated</td>
+      <td>TrailingDecision</td>
+      <td>Implements a trailing mechanism to automate buy/sell decisions based on configurable thresholds.</td>
+    </tr>
+    <!-- WindowsCredentials group -->
+    <tr>
+      <td rowspan="3">WindowsCredentials</td>
+      <td>save_password</td>
+      <td>Saves passwords securely to the Windows Credential Manager.</td>
+    </tr>
+    <tr>
+      <td>get_password</td>
+      <td>Retrieves passwords from the Windows Credential Manager.</td>
+    </tr>
+    <tr>
+      <td>delete_password</td>
+      <td>Deletes a specified password from the Windows Credential Manager.</td>
+    </tr>
+    <!-- IoT group -->
+    <tr>
+      <td rowspan="2">IoT</td>
+      <td>TuyaCloudControl</td>
+      <td>Wrapper for managing and reading Tuya devices via the Tuya Cloud.</td>
+    </tr>
+    <tr>
+      <td>SmartThingsControl</td>
+      <td>Wrapper for managing and reading SmartThings devices via the SmartThings Cloud.</td>
+    </tr>
+    <!-- IO group -->
+    <tr>
+      <td>IO</td>
+      <td>single_file_transfer</td>
+      <td>Highly scalable utility for parallel file transfers using chunk segmentation.</td>
+    </tr>
+  </tbody>
+</table>
+
 # Deploy this code in your repositories
 You can quickly access the stuff by
 
