@@ -123,8 +123,14 @@ class TrailingDecision:
                 'reason': MessagesTrailingDecision.SAFETY_NET_CASE,
                 'extra': self.extra_return | {
                     'new_start_limit': new_start_limit,
-                    'end_limit': end_limit,
-                    'safety_net_limit': safety_net_limit
+                    'end_limit': [end_limit,
+                                  f'{new_start_limit}'
+                                  f'{'-' if self.direction == 'UP' else '+'}'
+                                  f'({new_start_limit}*{self.safety_net_detector_unit})'],
+                    'safety_net_limit': [safety_net_limit,
+                                         f'{end_limit}'
+                                         f'{'-' if self.direction == 'UP' else '+'}'
+                                         f'{self.safety_net_detector_unit}']
                 }
             }
 
@@ -133,8 +139,14 @@ class TrailingDecision:
             'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED if decision else MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED,
             'extra': self.extra_return | {
                 'new_start_limit': new_start_limit,
-                'end_limit': end_limit,
-                'safety_net_limit': safety_net_limit
+                'end_limit': [end_limit,
+                              f'{new_start_limit}'
+                              f'{'-' if self.direction == 'UP' else '+'}'
+                              f'({new_start_limit}*{self.safety_net_detector_unit})'],
+                'safety_net_limit': [safety_net_limit,
+                                     f'{end_limit}'
+                                     f'{'-' if self.direction == 'UP' else '+'}'
+                                     f'{self.safety_net_detector_unit}']
             }
         }
 
@@ -143,7 +155,9 @@ class TrailingDecision:
         if valid:
             self.extra_return = {
                 'price_history[-1]': self.price_history[-1],
-                'initial_absolute_start_trailing': self.absolute_start_trailing[self.direction],
+                'initial_absolute_start_trailing': [self.absolute_start_trailing[self.direction],
+                                                    f'{self.position_price}'
+                                                    f'*(1{'+' if self.direction == 'UP' else '-'}{self.start_trailing_unit})'],
                 'position_price': self.position_price
             }
         else:
