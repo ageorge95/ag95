@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.3.57'
+VERSION = '0.3.58'
 DESCRIPTION = 'ag95 scripts collection'
 LONG_DESCRIPTION = 'Various scripts that can be used in all kinds of python projects.'
 
@@ -44,7 +44,12 @@ setup(
         "IoT": [
             'requests'
         ],
-        "IO": []
+        "IO": [],
+        "all": ['concurrent_log_handler',
+                'duckdb',
+                'plotly',
+                'keyring',
+                'requests']
     },
     keywords=['python', 'ag95']
 )
