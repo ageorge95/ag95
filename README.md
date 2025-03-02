@@ -4,7 +4,7 @@ Repository for common code used in some of my other repos. Compatible with pytho
 Currently ag95 has the following modules and utilities.:
 
 <table border="1" cellspacing="0" cellpadding="5">
-  <thead>
+  <thead>    
     <tr>
       <th>Module</th>
       <th>Utility</th>
@@ -12,6 +12,13 @@ Currently ag95 has the following modules and utilities.:
     </tr>
   </thead>
   <tbody>
+    <!-- all group -->
+    <tr>
+      <td>all</td>
+      <td>-</td>
+      <td>Will install all dependencies.</td>
+    </tr>
+    <!-- DecimalScripts group -->
     <tr>
       <td rowspan="3">DecimalScripts</td>
       <td>decimals_places</td>
@@ -176,7 +183,7 @@ Currently ag95 has the following modules and utilities.:
       <td>IO</td>
       <td>single_file_transfer</td>
       <td>Highly scalable utility for parallel file transfers using chunk segmentation.</td>
-    </tr>
+    </tr>    
   </tbody>
 </table>
 
