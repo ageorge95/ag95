@@ -1,69 +1,111 @@
 # ############## DecimalScripts #################
-from .DecimalScripts.decimals_places import decimals_places
-from .DecimalScripts.nr_normalisation import nr_normalisation
-from .DecimalScripts.round_closer import (round_down_closer,
-                                          round_up_closer)
+try:
+    from .DecimalScripts.decimals_places import decimals_places
+    from .DecimalScripts.nr_normalisation import nr_normalisation
+    from .DecimalScripts.round_closer import (round_down_closer,
+                                              round_up_closer)
+except:
+    pass
 
 # ############## LoggingScripts #################
-from .LoggingScripts.custom_logger import (configure_logger,
-                                           configure_loggers)
+try:
+    from .LoggingScripts.custom_logger import (configure_logger,
+                                               configure_loggers)
+except:
+    pass
 
 # ############## Threading #################
-from .Threading.thread_monitor import ThreadMonitor
+try:
+    from .Threading.thread_monitor import ThreadMonitor
+except:
+    pass
 
 # ############## General #################
-from .General.singleton_metaclass import (Singleton_with_cache,
-                                          Singleton_without_cache)
-from .General.stdin_watcher import stdin_watcher
-from .General.filepaths_from_folderpath import extract_filenames_from_filepath
-from .General.filepaths_from_folderpath import extract_filenames_from_folderpath
-from .General.shorten_long_strings import shorten_long_str
-from .General.timer_context import TimerContext
+try:
+    from .General.singleton_metaclass import (Singleton_with_cache,
+                                              Singleton_without_cache)
+    from .General.stdin_watcher import stdin_watcher
+    from .General.filepaths_from_folderpath import extract_filenames_from_filepath
+    from .General.filepaths_from_folderpath import extract_filenames_from_folderpath
+    from .General.shorten_long_strings import shorten_long_str
+    from .General.timer_context import TimerContext
+except:
+    pass
 
 # ############## TimeRelated #################
-from .TimeRelated.format_from_seconds import format_from_seconds
+try:
+    from .TimeRelated.format_from_seconds import format_from_seconds
+except:
+    pass
 
 # ############## SqliteDatabase #################
-from .SqliteDatabase.SqLiteDbWrapper import (SqLiteDbWrapper,
-                                             SqLiteColumnDef)
-from .SqliteDatabase.SqLiteDbMigration import SqLiteDbMigration
-from .SqliteDatabase.SqLiteDbBackup import SqLiteDbbackup
+try:
+    from .SqliteDatabase.SqLiteDbWrapper import (SqLiteDbWrapper,
+                                                 SqLiteColumnDef)
+    from .SqliteDatabase.SqLiteDbMigration import SqLiteDbMigration
+    from .SqliteDatabase.SqLiteDbBackup import SqLiteDbbackup
+except:
+    pass
 
 # ############## GenericDatabase #################
-from .GenericDatabase.DbWrapper import (DbWrapper,
-                                       ColumnDef)
-from .GenericDatabase.DbMigration import DbMigration
-from .GenericDatabase.DbBackup import Dbbackup
+try:
+    from .GenericDatabase.DbWrapper import (DbWrapper,
+                                           ColumnDef)
+    from .GenericDatabase.DbMigration import DbMigration
+    from .GenericDatabase.DbBackup import Dbbackup
+except:
+    pass
 
 # ############## DuckDbDatabase #################
-from .DuckDbDatabase.DuckDbWrapper import (DuckDbWrapper,
-                                           DuckColumnDef)
-from .DuckDbDatabase.DuckDbMigration import DuckDbMigration
-from .DuckDbDatabase.DuckDbbackup import DuckDbbackup
+try:
+    from .DuckDbDatabase.DuckDbWrapper import (DuckDbWrapper,
+                                               DuckColumnDef)
+    from .DuckDbDatabase.DuckDbMigration import DuckDbMigration
+    from .DuckDbDatabase.DuckDbbackup import DuckDbbackup
+except:
+    pass
 
 # ############## PlotlyRelated #################
-from .PlotlyRelated.PlotlyRelatedBase import (ScatterPlotDef,
-                                              BarPlotDef,
-                                              HistogramPlotDef,
-                                              SinglePlot,
-                                              MultiRowPlot)
-from .TemplatesHtml.export_html_templates import export_html_templates
+try:
+    from .PlotlyRelated.PlotlyRelatedBase import (ScatterPlotDef,
+                                                  BarPlotDef,
+                                                  HistogramPlotDef,
+                                                  SinglePlot,
+                                                  MultiRowPlot)
+    from .TemplatesHtml.export_html_templates import export_html_templates
+except:
+    pass
 
 # ############## DataManipulation #################
-from .DataManipulation.datetime_lists_normalise import datetime_lists_normalise
+try:
+    from .DataManipulation.datetime_lists_normalise import datetime_lists_normalise
+except:
+    pass
 
 # ############## TradingRelated #################
-from .TradingRelated.TrailingDecision import (TrailingDecision,
-                                              MessagesTrailingDecision)
+try:
+    from .TradingRelated.TrailingDecision import (TrailingDecision,
+                                                  MessagesTrailingDecision)
+except:
+    pass
 
 # ############## Cryptography #################
-from .WindowsCredentials.windows_credentials import (save_password,
-                                                     get_password,
-                                                     delete_password)
+try:
+    from .WindowsCredentials.windows_credentials import (save_password,
+                                                         get_password,
+                                                         delete_password)
+except:
+    pass
 
 # ############## IoT #################
-from .IoT.SmartThings import SmartThingsControl
-from .IoT.TuyaCloud import TuyaCloudControl
+try:
+    from .IoT.SmartThings import SmartThingsControl
+    from .IoT.TuyaCloud import TuyaCloudControl
+except:
+    pass
 
 # ############## IO #################
-from .IO.paralel_file_transfer import single_file_transfer
+try:
+    from .IO.paralel_file_transfer import single_file_transfer
+except:
+    pass
