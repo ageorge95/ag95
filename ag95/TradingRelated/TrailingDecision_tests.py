@@ -1,5 +1,6 @@
 from ag95 import (TrailingDecision,
                   MessagesTrailingDecision)
+from pprint import pformat
 import unittest
 
 class TestTrailingDecision(unittest.TestCase):
@@ -13,29 +14,11 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': None,
             'reason': MessagesTrailingDecision.INVALID_PRICE_HISTORY
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0002(self):
-        input_data = {
-            'price_history': [1, 1.1, 1.2],
-            'position_price': 1,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': -0.03
-        }
-        expected_output = {
-            'decision': None,
-            'reason': MessagesTrailingDecision.INVALID_SAFETY_NET_UNIT
         }
         result = TrailingDecision(**input_data).take()
         self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
@@ -47,8 +30,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': -0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': None,
@@ -64,8 +46,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': -0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': None,
@@ -81,8 +62,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': -0.1,
             'end_trailing_unit': -0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': None,
@@ -98,8 +78,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UPY',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UPY'
         }
         expected_output = {
             'decision': None,
@@ -115,8 +94,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWNL',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWNL'
         }
         expected_output = {
             'decision': None,
@@ -132,8 +110,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': -0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UPY',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UPY'
         }
         expected_output = {
             'decision': None,
@@ -146,58 +123,6 @@ class TestTrailingDecision(unittest.TestCase):
     # ########################
     # check the UP direction
     # ########################
-    # check the last value limit case
-    def test_case_0009(self):
-        input_data = {
-            'price_history': [1, 1.1],
-            'position_price': 1,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0010(self):
-        input_data = {
-            'price_history': [1, 1.01, 1.02, 1.03, 1.04, 1.05, 1.1, 1.1],
-            'position_price': 1,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0010_1(self):
-        input_data = {
-            'price_history': [1.1, 1.1, 1.1, 1.1],
-            'position_price': 1,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
     # invalid end trailing case
     def test_case_0011(self):
         input_data = {
@@ -205,8 +130,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -222,8 +146,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -239,8 +162,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -257,16 +179,15 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
-            'decision': True,
-            'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED
+            'decision': False,
+            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
     # standby case
     def test_case_0015(self):
@@ -275,8 +196,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -292,8 +212,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -309,8 +228,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -327,8 +245,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -344,8 +261,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -361,72 +277,19 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
-            'decision': True,
-            'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED
+            'decision': False,
+            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
     # ########################
     # check the DOWN direction
     # ########################
-    # check the last value limit case
-    def test_case_0021(self):
-        input_data = {
-            'price_history': [1, 0.9],
-            'position_price': 1,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0022(self):
-        input_data = {
-            'price_history': [1, 0.99, 0.98, 0.97, 0.96, 0.95, 0.9],
-            'position_price': 1,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0022_1(self):
-        input_data = {
-            'price_history': [0.9, 0.9, 0.9, 0.9],
-            'position_price': 1,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
     # invalid end trailing case
     def test_case_0023(self):
         input_data = {
@@ -434,8 +297,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -451,8 +313,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -468,8 +329,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -486,16 +346,15 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
-            'decision': True,
-            'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED
+            'decision': False,
+            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
     # standby case
     def test_case_0027(self):
@@ -504,8 +363,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -521,8 +379,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -538,8 +395,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -556,8 +412,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -573,16 +428,15 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
-            'decision': True,
-            'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED
+            'decision': False,
+            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
     def test_case_0032(self):
         input_data = {
@@ -590,8 +444,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -607,16 +460,15 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
-            'decision': True,
-            'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED
+            'decision': False,
+            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
     # extra random tests
     def test_case_0034(self):
@@ -625,29 +477,11 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1.0084,
             'start_trailing_unit': 0.18,
             'end_trailing_unit': 0.03,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
             'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0035(self):
-        input_data = {
-            'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888],
-            'position_price': 1.0084,
-            'start_trailing_unit': 0.18,
-            'end_trailing_unit': 0.03,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
         }
         result = TrailingDecision(**input_data).take()
         self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
@@ -659,8 +493,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1.0084,
             'start_trailing_unit': 0.18,
             'end_trailing_unit': 0.03,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': False,
@@ -672,54 +505,35 @@ class TestTrailingDecision(unittest.TestCase):
 
     def test_case_0037(self):
         input_data = {
-            'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 0.85169463],
+            'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826288, 0.85069463],
             'position_price': 1.0084,
             'start_trailing_unit': 0.18,
             'end_trailing_unit': 0.03,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0038(self):
-        input_data = {
-            'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912],
-            'position_price': 1.0084,
-            'start_trailing_unit': 0.18,
-            'end_trailing_unit': 0.03,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
-        }
-        expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0039(self):
-        input_data = {
-            'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.189912, 1.15421464],
-            'position_price': 1.0084,
-            'start_trailing_unit': 0.18,
-            'end_trailing_unit': 0.03,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'DOWN'
         }
         expected_output = {
             'decision': True,
             'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
+
+    def test_case_0039(self):
+        input_data = {
+            'price_history': [0.8226, 0.8197, 0.8049, 0.7994, 0.7997, 0.826888, 1.199912, 1.15421464],
+            'position_price': 1.0084,
+            'start_trailing_unit': 0.18,
+            'end_trailing_unit': 0.03,
+            'direction': 'UP'
+        }
+        expected_output = {
+            'decision': False,
+            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
+        }
+        result = TrailingDecision(**input_data).take()
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
     def test_case_0040(self):
         input_data = {
@@ -727,8 +541,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1.0084,
             'start_trailing_unit': 0.18,
             'end_trailing_unit': 0.03,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -744,8 +557,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1.0084,
             'start_trailing_unit': 0.18,
             'end_trailing_unit': 0.03,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -761,8 +573,7 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1.0084,
             'start_trailing_unit': 0.18,
             'end_trailing_unit': 0.03,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
@@ -778,16 +589,15 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1.0084,
             'start_trailing_unit': 0.18,
             'end_trailing_unit': 0.03,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
-            'decision': True,
-            'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED
+            'decision': False,
+            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
     def test_case_0044(self):
         input_data = {
@@ -795,67 +605,31 @@ class TestTrailingDecision(unittest.TestCase):
             'position_price': 1,
             'start_trailing_unit': 0.1,
             'end_trailing_unit': 0.05,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'direction': 'UP'
         }
         expected_output = {
-            'decision': False,
-            'reason': MessagesTrailingDecision.SAFETY_NET_CASE
+            'decision': True,
+            'reason': MessagesTrailingDecision.TRAILING_END_FULFILLED
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
     def test_case_0045(self):
         input_data = {
-            'price_history': [1, 1.1, 1.1],
+            'price_history': [1, 10],
             'position_price': 1,
             'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.1,
-            'direction': 'UP',
-            'safety_net_detector_unit': 0.03
+            'end_trailing_unit': 0.05,
+            'direction': 'UP'
         }
         expected_output = {
             'decision': False,
-            'reason': MessagesTrailingDecision.ONLY_LAST_VALUE_CASE
+            'reason': MessagesTrailingDecision.TRAILING_END_NOT_FULFILLED
         }
         result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0046(self):
-        input_data = {
-            'price_history': [1, 1.1, 1.05, 1.15, 1.1],
-            'position_price': 1,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': -0.5
-        }
-        expected_output = {
-            'decision': None,
-            'reason': MessagesTrailingDecision.INVALID_SAFETY_NET_UNIT
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
-
-    def test_case_0047(self):
-        input_data = {
-            'price_history': [100, 100, 100],
-            'position_price': 100,
-            'start_trailing_unit': 0.1,
-            'end_trailing_unit': 0.05,
-            'direction': 'DOWN',
-            'safety_net_detector_unit': -0.5
-        }
-        expected_output = {
-            'decision': None,
-            'reason': MessagesTrailingDecision.INVALID_SAFETY_NET_UNIT
-        }
-        result = TrailingDecision(**input_data).take()
-        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
-        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+        self.assertEqual(expected_output['decision'], result['decision'], f'full result: {pformat(result)}')
+        self.assertEqual(expected_output['reason'], result['reason'], f'full result: {pformat(result)}')
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
