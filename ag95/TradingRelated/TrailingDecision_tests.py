@@ -136,6 +136,22 @@ class TestTrailingDecision(unittest.TestCase):
         self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
         self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
 
+    def test_case_0047(self):
+        input_data = {
+            'price_history': [1,2,3,1,4],
+            'position_price': 1,
+            'start_trailing_unit': 0.1,
+            'end_trailing_unit': 0.11,
+            'direction': 'UP'
+        }
+        expected_output = {
+            'decision': None,
+            'reason': MessagesTrailingDecision.INVALID_END_GREATER_THAN_START_UNITS
+        }
+        result = TrailingDecision(**input_data).take()
+        self.assertEqual(result['decision'], expected_output['decision'], f'full result: {result}')
+        self.assertEqual(result['reason'], expected_output['reason'], f'full result: {result}')
+
     # ########################
     # check the UP direction
     # ########################

@@ -14,6 +14,7 @@ class MessagesTrailingDecision:
     INVALID_DIRECTION: str = 'Invalid direction'
     INVALID_PRICE_HISTORY: str = 'Invalid price history'
     INVALID_EQUAL_START_END_UNITS: str = 'Invalid equal start and end units'
+    INVALID_END_GREATER_THAN_START_UNITS: str = 'Invalid end unit is greater than start unit'
 
     STANDBY_CASE: str = 'In standby mode'
     SAFETY_NET_CASE: str = 'In safety mode'
@@ -68,6 +69,9 @@ class TrailingDecision:
 
         if self.start_trailing_unit == self.end_trailing_unit:
             return False, MessagesTrailingDecision.INVALID_EQUAL_START_END_UNITS
+
+        if self.end_trailing_unit > self.start_trailing_unit:
+            return False, MessagesTrailingDecision.INVALID_END_GREATER_THAN_START_UNITS
 
         if self.direction not in ['UP', 'DOWN']:
             return False, MessagesTrailingDecision.INVALID_DIRECTION
