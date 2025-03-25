@@ -1,4 +1,9 @@
-def red_green_from_range_value(value, min_value, max_value):
+from typing import Literal
+
+def red_green_from_range_value(value,
+                               min_value,
+                               max_value,
+                               return_as: Literal["tuple", "hex"] = "tuple"):
     # Function that returns an RGB color (between red and green)
     # based on a specified value and a minimum and maximum
     # Ensure value is within the range [min_value, max_value]
@@ -12,7 +17,12 @@ def red_green_from_range_value(value, min_value, max_value):
     green = int((1 - ratio) * 255)  # Green decreases as the value increases
 
     # return the RGB value
-    return (red, green, 0)
+    if return_as == 'tuple':
+        return (red, green, 0)
+    elif return_as == 'hex':
+        return '#{:02X}{:02X}{:02X}'.format(*(red, green, 0))
+    else:
+        return None
 
 if __name__ == '__main__':
     r, g, b = red_green_from_range_value(-10, 0, 100)
