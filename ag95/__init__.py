@@ -109,3 +109,9 @@ try:
     from .IO.paralel_file_transfer import single_file_transfer
 except:
     pass
+
+# ############## colors #################
+try:
+    from .colors.rgb_from_range_value import red_green_from_range_value
+except:
+    pass

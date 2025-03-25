@@ -183,7 +183,13 @@ Currently ag95 has the following modules and utilities.:
       <td>IO</td>
       <td>single_file_transfer</td>
       <td>Highly scalable utility for parallel file transfers using chunk segmentation.</td>
-    </tr>    
+    </tr>
+    <!-- colors group -->
+    <tr>
+      <td>colors</td>
+      <td>red_green_from_range_value</td>
+      <td>Will output a rgb value between green and red based on a given value, a minimum and a maximum.</td>
+    </tr> 
   </tbody>
 </table>
 
