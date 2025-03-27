@@ -61,16 +61,16 @@ Currently ag95 has the following modules and utilities.:
     <tr>
       <td>stdin_watcher</td>
       <td>Monitors standard input and triggers configurable actions based on specified keywords.</td>
-    </tr>
-    <tr>
-      <td>TimerContext</td>
-      <td>Context manager for measuring the execution time of code blocks.</td>
-    </tr>
+    </tr>    
     <!-- TimeRelated group -->
     <tr>
       <td>TimeRelated</td>
       <td>format_from_seconds</td>
       <td>Formats elapsed time (in seconds) into a human-readable string with configurable granularity.</td>
+    </tr>
+    <tr>
+      <td>TimerContext</td>
+      <td>Context manager for measuring the execution time of code blocks.</td>
     </tr>
     <!-- SqliteDatabase group -->
     <tr>
