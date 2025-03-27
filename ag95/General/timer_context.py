@@ -30,7 +30,7 @@ class TimerContext:
 
     def __exit__(self, exc_type, exc_value, traceback):
         # Always capture the elapsed time.
-        self.elapsed = time.perf_counter() - self.start
+        self.elapsed_s = time.perf_counter() - self.start
         # If an exception occurred outside of execute(), let it propagate.
         if exc_type is not None:
             return False  # Propagate unexpected exceptions.
