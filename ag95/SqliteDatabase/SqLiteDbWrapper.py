@@ -77,6 +77,65 @@ class SqLiteDbWrapper():
         cursorObj = self.con.cursor()
         cursorObj.execute(f"ALTER TABLE {table_name} ADD {column_def.column_name} {column_def.column_type}")
 
+    def rename_column(self,
+                      table_name: AnyStr,
+                      old_column_name: AnyStr,
+                      new_column_name: AnyStr):
+
+        cursorObj = self.con.cursor()
+
+        # 1. Get the current schema of the table
+        cursorObj.execute(f"PRAGMA table_info('{table_name}')")
+        columns_info = cursorObj.fetchall()
+
+        if not any(col[1] == old_column_name for col in columns_info):
+            print(f"Error: Column '{old_column_name}' not found in table '{table_name}'.")
+            return
+
+        column_definitions = []
+        for col_info in columns_info:
+            cid, name, data_type, notnull, default_value, primary_key = col_info
+            if name == old_column_name:
+                column_definitions.append(
+                    f"{new_column_name} "
+                    f"{data_type}"
+                    f"{' NOT NULL' if notnull else ''}"
+                    f"{' PRIMARY KEY' if primary_key else ''}"
+                    f"{f' DEFAULT {default_value}' if default_value is not None else ''}")
+            else:
+                column_definitions.append(
+                    f"{name} "
+                    f"{data_type}"
+                    f"{' NOT NULL' if notnull else ''}"
+                    f"{' PRIMARY KEY' if primary_key else ''}"
+                    f"{f' DEFAULT {default_value}' if default_value is not None else ''}")
+
+        new_table_name = f"_temp_{table_name}"
+
+        # 2. Create a new temporary table with the new column name
+        create_table_sql = f"CREATE TABLE {new_table_name} ({', '.join(column_definitions)})"
+        cursorObj.execute(create_table_sql)
+
+        # 3. Construct the column list for the INSERT statement
+        old_columns = [col[1] for col in columns_info]
+        new_columns = [new_column_name if col == old_column_name else col for col in old_columns]
+        columns_to_insert = ', '.join(new_columns)
+        old_columns_to_select = ', '.join(old_columns)
+
+        # 4. Copy data from the old table to the new table
+        insert_data_sql = (f"INSERT INTO "
+                           f"{new_table_name} "
+                           f"({columns_to_insert}) SELECT {old_columns_to_select} FROM {table_name}")
+        cursorObj.execute(insert_data_sql)
+
+        # 5. Drop the old table
+        drop_table_sql = f"DROP TABLE {table_name}"
+        cursorObj.execute(drop_table_sql)
+
+        # 6. Rename the new table to the original table name
+        rename_table_sql = f"ALTER TABLE {new_table_name} RENAME TO {table_name}"
+        cursorObj.execute(rename_table_sql)
+
     def append_in_table(self,
                         table_name: AnyStr,
                         column_names: List,
@@ -196,6 +255,18 @@ if __name__ == '__main__':
         DB.update_record(table_name='my_db_table_name',
                          record_ID=1,
                          data={'my_column_name1': 10})
+        result = str(DB.return_records(table_name='my_db_table_name'))
+        expected = str([(1, timestamp, 10, 5)])
+        assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
+        # TEST the column rename method
+        DB.rename_column(table_name='my_db_table_name',
+                         old_column_name='my_column_name1',
+                         new_column_name='my_column_name11')
+        result = str(DB.get_tables_columns())
+        expected = str({'my_db_table_name': ['ID', 'TIMESTAMP', 'my_column_name11', 'my_column_name2']})
+        assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
         result = str(DB.return_records(table_name='my_db_table_name'))
         expected = str([(1, timestamp, 10, 5)])
         assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
