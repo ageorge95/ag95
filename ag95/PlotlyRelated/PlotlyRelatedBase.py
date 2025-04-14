@@ -220,9 +220,15 @@ class MultiRowPlot:
         layout = dict(
             hoversubplots="axis",
             title=dict(text=self.title),
-            hovermode="x",
+            hovermode="x", # update data on hover by default
             grid=dict(rows=len(self.plots), columns=1),
+            xaxis_showticklabels=True # force the tick labels by default
         )
+        if self.height: # update the height if requested
+            layout |= dict(height = self.height)
+        # remove the excessive white margins
+        layout |= {'margin': dict(l=0, r=0, t=25, b=25)} if not self.title \
+            else {'margin': dict(l=0, r=0, t=42, b=25)}
 
         subplots_data = [
         ]
@@ -235,8 +241,8 @@ class MultiRowPlot:
                     'x': plot.x_axis[i],
                     'y': plot.y_axis[i],
                     'xaxis': 'x',
-                    'yaxis': f'y{row_id}' if row_id else 'y',
-                    'showlegend': True # explicitly enable legend display for this trace
+                    'yaxis': f'y{row_id}' if row_id > 1 else 'y',
+                    'showlegend': self.showlegend
                 }
                 if plot.name:
                     kwargs |= ({'name': plot.name[i]})
