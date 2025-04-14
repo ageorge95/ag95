@@ -229,7 +229,8 @@ class MultiRowPlot:
             hovermode="x", # update data on hover by default
             grid=dict(rows=len(self.plots), columns=1), # pre-configure the structure of the plot
             xaxis=dict( # configure the x axis
-                domain=[0, 1], # add the full possible domain range
+                # FAKE XAXIS ANNOTATIONS DISABLED for now as it looks bad when a large number of datapoints are plotted
+                # domain=[0, 1], # add the full possible domain range
                 anchor=f"y{len(self.plots)}", # Anchor to bottom y-axis
                 showticklabels=True # force the tick labels by default
             ),
@@ -243,31 +244,32 @@ class MultiRowPlot:
         layout |= {'margin': dict(l=0, r=0, t=25, b=25)} if not self.title \
             else {'margin': dict(l=0, r=0, t=42, b=25)}
 
-        # NOTE currently there is no automatic way to add the x_axis under each subplot using go.Figure()
-        # so I had to come up with this mechanism that adds fake x axis values via annotations
-        # first compute the domain for each subplot
-        total_subplots_number = len(self.plots)
-        max_domain_per_subplot = 1 / total_subplots_number
-        domain_space_between_subplots = 0.05 # controls the space between subplots
-        y_domains = dict([f'yaxis{total_subplots_number - _}' if (total_subplots_number - _) > 1 else 'yaxis',
-                          [max_domain_per_subplot * (_) + (domain_space_between_subplots if _ else 0),
-                           max_domain_per_subplot * (_ + 1)]] for _ in range(total_subplots_number))
-        # example for total_subplots_number == 3
-        # y_domains = {
-        #     'yaxis3': [0.0, 0.33],
-        #     'yaxis2': [0.38, 0.66],
-        #     'yaxis': [0.71, 1.0]
-        # }
-        # example for total_subplots_number == 2
-        # y_domains = {
-        #     'yaxis2': [0.0, 0.5],
-        #     'yaxis': [0.55, 1.0]
-        # }
-
-        # add the domains for each subplot
-        for row_id, _ in enumerate(self.plots, 1):
-            relevant_y_axis_name = f'yaxis{row_id}' if row_id > 1 else 'yaxis'
-            layout |= {relevant_y_axis_name: dict(domain=y_domains[relevant_y_axis_name])}
+        # FAKE XAXIS ANNOTATIONS DISABLED for now as it looks bad when a large number of datapoints are plotted
+        # # NOTE currently there is no automatic way to add the x_axis under each subplot using go.Figure()
+        # # so I had to come up with this mechanism that adds fake x axis values via annotations
+        # # first compute the domain for each subplot
+        # total_subplots_number = len(self.plots)
+        # max_domain_per_subplot = 1 / total_subplots_number
+        # domain_space_between_subplots = 0.05 # controls the space between subplots
+        # y_domains = dict([f'yaxis{total_subplots_number - _}' if (total_subplots_number - _) > 1 else 'yaxis',
+        #                   [max_domain_per_subplot * (_) + (domain_space_between_subplots if _ else 0),
+        #                    max_domain_per_subplot * (_ + 1)]] for _ in range(total_subplots_number))
+        # # example for total_subplots_number == 3
+        # # y_domains = {
+        # #     'yaxis3': [0.0, 0.33],
+        # #     'yaxis2': [0.38, 0.66],
+        # #     'yaxis': [0.71, 1.0]
+        # # }
+        # # example for total_subplots_number == 2
+        # # y_domains = {
+        # #     'yaxis2': [0.0, 0.5],
+        # #     'yaxis': [0.55, 1.0]
+        # # }
+        #
+        # # add the domains for each subplot
+        # for row_id, _ in enumerate(self.plots, 1):
+        #     relevant_y_axis_name = f'yaxis{row_id}' if row_id > 1 else 'yaxis'
+        #     layout |= {relevant_y_axis_name: dict(domain=y_domains[relevant_y_axis_name])}
 
         # #############################################
         # ########## Pre figure creation logic ########
@@ -364,29 +366,30 @@ class MultiRowPlot:
                                       xref = 'x',
                                       yref = f'y{row_id}')
 
-        # create and add the fake x axis values via annotations for each subplot except the last bottom one
-        if len(self.plots) > 1:
-            annotations = []
-            for row_id, plot in enumerate(self.plots[:-1], 1): # skip the last subplot
-                relevant_y_axis_name = f'yaxis{row_id}' if row_id > 1 else 'yaxis'
-                domain = y_domains[relevant_y_axis_name]
-                location_y = domain[0]
-                for tick, text in zip(self.plots[0].x_axis[0],
-                                      self.plots[0].x_axis[0]):
-                    annotations.append(dict(
-                        x=tick,
-                        y=location_y,
-                        text=text,
-                        showarrow=False,
-                        xanchor="center",
-                        yanchor="top",
-                        xref="x",
-                        yref="paper",
-                        font=dict(size=10, color="gray")
-                    ))
-            fig.update_layout(
-                annotations=annotations
-            )
+        # FAKE XAXIS ANNOTATIONS DISABLED for now as it looks bad when a large number of datapoints are plotted
+        # # create and add the fake x axis values via annotations for each subplot except the last bottom one
+        # if len(self.plots) > 1:
+        #     annotations = []
+        #     for row_id, plot in enumerate(self.plots[:-1], 1): # skip the last subplot
+        #         relevant_y_axis_name = f'yaxis{row_id}' if row_id > 1 else 'yaxis'
+        #         domain = y_domains[relevant_y_axis_name]
+        #         location_y = domain[0]
+        #         for tick, text in zip(self.plots[0].x_axis[0],
+        #                               self.plots[0].x_axis[0]):
+        #             annotations.append(dict(
+        #                 x=tick,
+        #                 y=location_y,
+        #                 text=str(text),
+        #                 showarrow=False,
+        #                 xanchor="center",
+        #                 yanchor="top",
+        #                 xref="x",
+        #                 yref="paper",
+        #                 font=dict(size=10, color="gray")
+        #             ))
+        #     fig.update_layout(
+        #         annotations=annotations
+        #     )
 
         if show_fig:
             fig.show()
