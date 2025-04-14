@@ -231,10 +231,13 @@ class MultiRowPlot:
         # create the initial plots
         for row_id, plot in enumerate(self.plots, 1):
             for i in range(len(plot.x_axis)):
-                kwargs = {'x': plot.x_axis[i],
-                          'y': plot.y_axis[i],
-                          'xaxis': 'x',
-                          'yaxis': f'y{row_id}' if row_id else 'y'}
+                kwargs = {
+                    'x': plot.x_axis[i],
+                    'y': plot.y_axis[i],
+                    'xaxis': 'x',
+                    'yaxis': f'y{row_id}' if row_id else 'y',
+                    'showlegend': True # explicitly enable legend display for this trace
+                }
                 if plot.name:
                     kwargs |= ({'name': plot.name[i]})
 
