@@ -328,6 +328,9 @@ class MultiRowPlot:
         update_args |= {'margin': dict(l=0, r=0, t=25, b=25)} if not self.title\
             else {'margin': dict(l=0, r=0, t=42, b=25)}
 
+        # fully show the trace name by default
+        update_args |= {'hoverlabel_namelength': -1}
+
         # force show the x axis to show on all subplots
         # xaxis{n}_showticklabels is needed for each axis in order to show the x axis, when the shared_axes is ON
         if len(self.plots) > 1:
@@ -354,6 +357,7 @@ class MultiRowPlot:
         # initial plot layout
         layout = dict(
             hoversubplots="axis", # enable parallel cursor hovering over all the subplots
+            hoverlabel_namelength=-1, # fully show the trace name by default
             title=dict(text=self.title), # the title of the plot (NOT of the subplots but of the larger plot)
             hovermode="x", # update data on hover by default
             grid=dict(rows=len(self.plots), columns=1), # pre-configure the structure of the plot
