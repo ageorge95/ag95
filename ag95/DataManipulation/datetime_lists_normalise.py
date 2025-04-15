@@ -1,67 +1,148 @@
-from typing import (List,
-                    Dict,
-                    Literal,
-                    Callable)
-from datetime import (datetime,
-                      timedelta)
+import bisect
+from datetime import datetime, timedelta
+from typing import List, Dict, Callable, Literal, Any, Tuple
 
-def datetime_lists_normalise(datetime_lists: List[List[Dict]],
-                             max_deviation_ms: float | int = 50,
-                             supress_sanity_check_messages: bool = False,
-                             sort: Literal['ASC', 'DESC', 'NONE'] = 'ASC',
-                             custom_function_step: Callable = None,
-                             custom_function_total: Callable = None) -> List[Dict]:
+# Helper type for clarity
+DateTimeValueTuple = Tuple[datetime, Any]
 
-    # some sanity checks first
+def datetime_lists_normalise(
+    datetime_lists: List[List[Dict]],
+    max_deviation_ms: float | int = 50,
+    suppress_sanity_check_messages: bool = False,
+    sort: Literal['ASC', 'DESC', 'NONE'] = 'ASC',
+    custom_function_step: Callable = None,
+    custom_function_total: Callable = None
+) -> List[Dict] | None:
+    """
+    Normalises lists of dictionaries based on datetime proximity.
+
+    Finds groups of items (one from each input sublist) where the datetime keys
+    are within `max_deviation_ms` of each other, using one datetime as a reference.
+
+    Args:
+        datetime_lists: A list containing sublists. Each sublist contains
+                        dictionaries. Each dictionary must have exactly one
+                        key, which is a datetime object.
+        max_deviation_ms: The maximum allowed time difference (in milliseconds)
+                          between datetimes in a matching group relative to the
+                          reference datetime.
+        suppress_sanity_check_messages: If True, suppresses print messages on
+                                        input validation failure.
+        sort: How to sort the final output based on the reference datetimes.
+              'ASC' (ascending), 'DESC' (descending), or 'NONE'.
+        custom_function_step: An optional function to apply to each individual
+                              value found within a matching group. It receives
+                              the original value as input.
+        custom_function_total: An optional function to apply to the list of
+                               (potentially step-transformed) values collected
+                               for a matching group. It receives the list of
+                               values as input.
+
+    Returns:
+        A list of dictionaries. Each dictionary has a reference datetime as the key.
+        The value is a list containing the values from the matching dictionaries
+        found across the sublists (potentially transformed by custom_function_step).
+        If custom_function_total is provided, the value is a list containing two
+        elements: [list_of_values, result_of_custom_function_total].
+        Returns None if input sanity checks fail.
+    """
+    # --- Sanity Checks ---
     sanity_fail = [False, '']
     if not isinstance(datetime_lists, list):
         sanity_fail = [True, 'input is not a list']
-    elif not all([isinstance(_, list) for _ in datetime_lists]):
-        sanity_fail = [True, 'the elements of input are not a list']
-    elif not all([isinstance(__, dict) for _ in datetime_lists for __ in _]):
-        sanity_fail =[True, 'the elements of elements of input are not a dict']
+    elif not datetime_lists: # Handle empty input list
+         sanity_fail = [True, 'input list is empty']
+    # Check list types first - slightly more efficient if outer check fails
+    elif not all(isinstance(sublist, list) for sublist in datetime_lists):
+        sanity_fail = [True, 'one or more elements of input are not lists']
+    # Check dict types - combine inner loops for efficiency
+    elif not all(isinstance(item, dict)
+                 for sublist in datetime_lists
+                 for item in sublist):
+        sanity_fail = [True, 'one or more elements within sublists are not dicts']
+    # Check dict content (single datetime key) - more robust check
+    elif not all(len(item) == 1 and isinstance(next(iter(item.keys())), datetime)
+                 for sublist in datetime_lists
+                 for item in sublist):
+         sanity_fail = [True, 'one or more dicts do not contain a single datetime key']
+
     if sanity_fail[0]:
-        if not supress_sanity_check_messages:
-            print(f'input invalid: {sanity_fail[1]} !!!')
+        if not suppress_sanity_check_messages:
+            print(f'Input invalid: {sanity_fail[1]} !!!')
         return None
+    # --- End Sanity Checks ---
 
-    # make a list with all the unique datetimes
+    # --- Pre-processing ---
+    # 1. Extract (datetime, value) pairs and collect unique datetimes
+    # 2. Sort each sublist by datetime for efficient searching
     all_unique_datetimes = set()
+    processed_lists: List[List[DateTimeValueTuple]] = []
+    deviation_delta = timedelta(milliseconds=max_deviation_ms) # Calculate once
+
     for sublist in datetime_lists:
-        for object in sublist:
-            all_unique_datetimes.add(list(object.keys())[0]) # the only key for the dict object must be a datetime object
+        processed_sublist: List[DateTimeValueTuple] = []
+        for obj_dict in sublist:
+            # Assumes valid dict structure from sanity check
+            dt_key = next(iter(obj_dict.keys()))
+            value = obj_dict[dt_key]
+            processed_sublist.append((dt_key, value))
+            all_unique_datetimes.add(dt_key)
+        # Sort each sublist by datetime
+        processed_sublist.sort(key=lambda item: item[0])
+        processed_lists.append(processed_sublist)
+    # --- End Pre-processing ---
 
-    # sort all_unique_datetimes if requested
+    # Sort all unique datetimes if requested
+    # Convert set to list for sorting
+    sorted_unique_datetimes = list(all_unique_datetimes)
     if sort != 'NONE':
-        all_unique_datetimes = sorted(all_unique_datetimes, reverse=False if sort == 'ASC' else True)
+        sorted_unique_datetimes.sort(reverse=(sort == 'DESC'))
 
-    # iterate through all possible datetimes and construct the final returned object
+    # --- Main Processing Loop (Optimized with bisect) ---
     final_return = []
-    sublists_len = len(datetime_lists)
+    sublists_len = len(processed_lists) # Use count of processed lists
 
-    for main_key in all_unique_datetimes:
+    for main_key in sorted_unique_datetimes:
         to_append = []
-        deviation_comparison = [main_key-timedelta(milliseconds=max_deviation_ms), main_key+timedelta(milliseconds=max_deviation_ms)]
+        lower_bound = main_key - deviation_delta
+        upper_bound = main_key + deviation_delta
 
-        for sublist in datetime_lists:
-            for object in sublist:
-                relevant_datetime = list(object.keys())[0]
-                if deviation_comparison[0] <= relevant_datetime <= deviation_comparison[1]:
+        found_in_all = True # Assume success initially
+        for sorted_sublist in processed_lists:
+            if not sorted_sublist: # Skip empty pre-processed sublists
+                found_in_all = False
+                break
 
-                    # execute a custom function, if provided, on each step
+            # Find the leftmost index where dt >= lower_bound
+            # We only need the datetime for bisect_left
+            idx_left = bisect.bisect_left(sorted_sublist, lower_bound, key=lambda item: item[0])
+
+            # Check if a suitable item exists within the range
+            # The item at idx_left is the first candidate >= lower_bound
+            if idx_left < len(sorted_sublist):
+                candidate_dt, candidate_value = sorted_sublist[idx_left]
+                if candidate_dt <= upper_bound: # Check if it's also <= upper_bound
+                    # Match found - process it
                     if custom_function_step:
-                        to_append.append([*object.values(), custom_function_step(*object.values())])
+                        # Pass only the value to the step function
+                        to_append.append([candidate_value, custom_function_step(candidate_value)])
                     else:
-                        to_append.append(*object.values())
+                        to_append.append(candidate_value)
+                    # Found match in this sublist, continue to the next sublist
+                    continue
 
-                    break # if a good value is found stop looking into the rest of the sublist
+            # If we reach here, no match was found in the current sublist
+            found_in_all = False
+            break # Stop checking other sublists for this main_key
 
-        if len(to_append) == sublists_len: # only add the new element if suitable values were found in all sublists
-            # execute a custom function, if provided, on the total data
+        # Only add if suitable values were found in ALL sublists
+        if found_in_all: # Implicitly checks len(to_append) == sublists_len
             if custom_function_total:
+                # Pass the list of potentially step-transformed values
                 final_return.append({main_key: [to_append, custom_function_total(to_append)]})
             else:
                 final_return.append({main_key: to_append})
+    # --- End Main Processing Loop ---
 
     return final_return
 
@@ -72,16 +153,16 @@ if __name__ == '__main__':
     for test in [
         # check the sanity check invalidity
         [{'datetime_lists': [{now: 1}],
-          'supress_sanity_check_messages': True}, None],
+          'suppress_sanity_check_messages': True}, None],
         [{'datetime_lists': [{now-timedelta(seconds=60): 1}, {now: 2}],
-          'supress_sanity_check_messages': True}, None],
+          'suppress_sanity_check_messages': True}, None],
         [{'datetime_lists': [{now-timedelta(seconds=60): 564,
                               now: 1}],
-          'supress_sanity_check_messages': True}, None],
+          'suppress_sanity_check_messages': True}, None],
         [{'datetime_lists': [[1,2,3]],
-          'supress_sanity_check_messages': True}, None],
+          'suppress_sanity_check_messages': True}, None],
         [{'datetime_lists': [[[1, 2, 3]]],
-          'supress_sanity_check_messages': True}, None],
+          'suppress_sanity_check_messages': True}, None],
 
         # check the correct normalisation
         [{'datetime_lists': [[{now: 1}]]}, [{now: [1]}]],
