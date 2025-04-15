@@ -2,6 +2,7 @@ from typing import (List,
                     Dict,
                     Literal)
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from datetime import (datetime,
                       timedelta)
 
@@ -215,7 +216,135 @@ class MultiRowPlot:
     def _return_html_plot(self,
                           plot_type: type(go.Scatter) | type(go.Bar),
                           show_fig: bool = False,
-                          include_plotlyjs: bool = False):
+                          include_plotlyjs: bool = False,
+                          use_hoversubplots: bool = False):
+
+        if use_hoversubplots:
+            return self._return_html_plot_with_hoversubplots(plot_type = plot_type,
+                                                              show_fig = show_fig,
+                                                              include_plotlyjs = include_plotlyjs)
+        else:
+            return self._return_html_plot_without_hoversubplots(plot_type=plot_type,
+                                                                show_fig=show_fig,
+                                                                include_plotlyjs=include_plotlyjs)
+
+    def _return_html_plot_without_hoversubplots(self,
+                                                plot_type: type(go.Scatter) | type(go.Bar),
+                                                show_fig: bool = False,
+                                                include_plotlyjs: bool = False):
+
+        fig = make_subplots(rows=len(self.plots),
+                            cols=1,
+                            shared_xaxes=True,
+                            subplot_titles=[_.title for _ in self.plots],
+                            vertical_spacing = (1/len(self.plots)) * 0.25)
+
+        for row_id, plot in enumerate(self.plots, 1):
+            traces = []
+            for i in range(len(plot.x_axis)):
+                kwargs = {'x': plot.x_axis[i],
+                          'y': plot.y_axis[i]}
+                if plot.name:
+                    kwargs |= ({'name': plot.name[i]})
+                if plot.colors:
+                    if plot_type.__name__ is go.Scatter.__name__:
+                        kwargs |= ({'line': {'color': plot.colors[i]}})
+                    if plot_type.__name__ is go.Bar.__name__:
+                        kwargs |= ({'marker_color': plot.colors[i]})
+                if hasattr(plot, 'forced_width'):
+                    if plot.forced_width:
+                        kwargs |= ({'width': plot.forced_width})
+                # fill method for scatter plots
+                if hasattr(plot, 'fill_method'):
+                    if plot.fill_method:
+                        kwargs |= ({'fill': plot.fill_method[i]})
+
+                traces.append(plot_type(**kwargs))
+
+            fig.add_traces(traces,
+                           rows=row_id,
+                           cols=1)
+
+            if plot.v_rects:
+                for _ in plot.v_rects:
+                    fig.add_vrect(**_ | {'row': row_id,
+                                         'col': 1})
+            if plot.h_rects:
+                for _ in plot.h_rects:
+                    fig.add_hrect(**_ | {'row': row_id,
+                                         'col': 1})
+
+            if plot.forced_y_limits:
+                fig.update_yaxes(range=[plot.forced_y_limits[0], plot.forced_y_limits[1]],
+                                 row=row_id,
+                                 col=1)
+
+            if any([plot.force_show_until_current_datetime, plot.grey_out_missing_data_until_current_datetime]):
+                oldest_datapoint_refined = min([min(_) for _ in plot.x_axis])-timedelta(seconds=5)
+                newest_datapoint_refined = max([max(_) for _ in plot.x_axis])+timedelta(seconds=5)
+
+                if plot.grey_out_missing_data_until_current_datetime and not plot.force_show_until_current_datetime:
+                    # mark the missing data up until the current datetime with grey
+                    fig.add_vrect(x0=max([max(_) for _ in plot.x_axis]),
+                                  x1=plot.now,
+                                  fillcolor='grey',
+                                  opacity=0.5,
+                                  row=row_id,
+                                  col=1)
+
+                    # limit the plot horizontally, to see the missing data until the current time
+                    fig.update_xaxes(range=[oldest_datapoint_refined, newest_datapoint_refined])
+
+                if plot.force_show_until_current_datetime and not plot.grey_out_missing_data_until_current_datetime:
+                    # force show up until the current datetime
+                    fig.update_xaxes(range=[oldest_datapoint_refined, plot.now])
+
+                if plot.force_show_until_current_datetime and plot.grey_out_missing_data_until_current_datetime:
+                    # force show up until the current datetime
+                    fig.update_layout(xaxis_range=[oldest_datapoint_refined, plot.now])
+
+                    # mark the missing data up until the current datetime with grey
+                    fig.add_vrect(x0=max([max(_) for _ in plot.x_axis]),
+                                  x1=plot.now,
+                                  fillcolor='grey',
+                                  opacity=0.5,
+                                  row=row_id,
+                                  col=1)
+
+        update_args = {'title_text': self.title,
+                       'showlegend': self.showlegend}
+
+        # update the height if requested
+        if self.height:
+            update_args |= {'height': self.height}
+
+        # force the tick labels by default
+        update_args |= {'xaxis_showticklabels': True}
+
+        # update data on hover by default
+        update_args |= {'hovermode': 'x'}
+
+        # remove the excessive white margins
+        update_args |= {'margin': dict(l=0, r=0, t=25, b=25)} if not self.title\
+            else {'margin': dict(l=0, r=0, t=42, b=25)}
+
+        # force show the x axis to show on all subplots
+        # xaxis{n}_showticklabels is needed for each axis in order to show the x axis, when the shared_axes is ON
+        if len(self.plots) > 1:
+            force_show_x_axis_args = dict([[f'xaxis{i}_showticklabels', True] for i, _ in enumerate(range(2,len(self.plots)+1),1)])
+            update_args |= force_show_x_axis_args
+
+        fig.update_layout(**update_args)
+
+        if show_fig:
+            fig.show()
+
+        return fig.to_html(include_plotlyjs=include_plotlyjs)
+
+    def _return_html_plot_with_hoversubplots(self,
+                                             plot_type: type(go.Scatter) | type(go.Bar),
+                                             show_fig: bool = False,
+                                             include_plotlyjs: bool = False):
         # NOTE for future self: make_subplots() would have worked better in this case
         # BUT as of Apr25 the hoversubplots feature only works via the go.Figure() plot creation method
 
@@ -398,14 +527,18 @@ class MultiRowPlot:
 
     def return_html_ScatterPlot(self,
                                 show_fig: bool = False,
-                                include_plotlyjs: bool = False):
+                                include_plotlyjs: bool = False,
+                                use_hoversubplots: bool = False):
         return self._return_html_plot(plot_type=go.Scatter,
                                       show_fig=show_fig,
-                                      include_plotlyjs=include_plotlyjs)
+                                      include_plotlyjs=include_plotlyjs,
+                                      use_hoversubplots=use_hoversubplots)
 
     def return_html_BarPlot(self,
                             show_fig: bool = False,
-                            include_plotlyjs: bool = False):
+                            include_plotlyjs: bool = False,
+                            use_hoversubplots: bool = False):
         return self._return_html_plot(plot_type=go.Bar,
                                       show_fig=show_fig,
-                                      include_plotlyjs=include_plotlyjs)
+                                      include_plotlyjs=include_plotlyjs,
+                                      use_hoversubplots=use_hoversubplots)
