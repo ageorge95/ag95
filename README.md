@@ -46,7 +46,7 @@ Currently ag95 has the following modules and utilities.:
     </tr>
     <!-- General group -->
     <tr>
-      <td rowspan="5">General</td>
+      <td rowspan="4">General</td>
       <td>extract_filenames_from_folderpath</td>
       <td>Recursively extracts filenames from a folder, filtering by file extension.</td>
     </tr>
@@ -64,7 +64,7 @@ Currently ag95 has the following modules and utilities.:
     </tr>    
     <!-- TimeRelated group -->
     <tr>
-      <td>TimeRelated</td>
+      <td rowspan="2">TimeRelated</td>
       <td>format_from_seconds</td>
       <td>Formats elapsed time (in seconds) into a human-readable string with configurable granularity.</td>
     </tr>
