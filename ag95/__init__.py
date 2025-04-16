@@ -112,6 +112,6 @@ except:
 
 # ############## colors #################
 try:
-    from .colors.rgb_from_range_value import red_green_from_range_value
+    from .Colors.rgb_from_range_value import red_green_from_range_value
 except:
     pass
