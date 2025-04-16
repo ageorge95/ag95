@@ -184,11 +184,17 @@ Currently ag95 has the following modules and utilities.:
       <td>single_file_transfer</td>
       <td>Highly scalable utility for parallel file transfers using chunk segmentation.</td>
     </tr>
-    <!-- colors group -->
+    <!-- Colors group -->
     <tr>
-      <td>colors</td>
+      <td>Colors</td>
       <td>red_green_from_range_value</td>
       <td>Will output a rgb value between green and red based on a given value, a minimum and a maximum.</td>
+    </tr> 
+    <!-- EmailHandler group -->
+    <tr>
+      <td>EmailHandler</td>
+      <td>send_mail_from_gmail</td>
+      <td>Will send an email using a gmail account.</td>
     </tr> 
   </tbody>
 </table>

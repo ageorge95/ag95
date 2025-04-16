@@ -110,8 +110,14 @@ try:
 except:
     pass
 
-# ############## colors #################
+# ############## Colors #################
 try:
     from .Colors.rgb_from_range_value import red_green_from_range_value
+except:
+    pass
+
+# ############## EmailHandler #################
+try:
+    from .EmailHandler.gmail import send_mail_from_gmail
 except:
     pass
