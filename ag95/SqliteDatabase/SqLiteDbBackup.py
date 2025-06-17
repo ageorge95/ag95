@@ -46,6 +46,8 @@ class SqLiteDbbackup():
         # context managers do not work well with threads for some reason ...
         # for now connect will be used outside of context
 
+        src = None
+        dst = None
         try:
             src = connect(self.input_filepath)
             dst = connect(self.output_filepath)
@@ -54,15 +56,19 @@ class SqLiteDbbackup():
                        pages=self.pages,
                        progress=self._backup_progress)
 
-            src.close()
-            dst.close()
+            if src is not None:
+                src.close()
+            if dst is not None:
+                dst.close()
 
             self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
         except:
             # try to release the connections if any exception occurred above
             try:
-                src.close()
-                dst.close()
+                if src is not None:
+                    src.close()
+                if dst is not None:
+                    dst.close()
             except:
                 # if closing the connections fails, simply do nothing
                 pass
@@ -73,6 +79,7 @@ class SqLiteDbbackup():
         start = datetime.now()
         # context managers do not work well with threads for some reason ...
         # for now connect will be used outside of context
+        con = None
         try:
             con = connect(self.input_filepath)
             con.execute("VACUUM")
@@ -82,7 +89,8 @@ class SqLiteDbbackup():
         except:
             # try to release the connection if any exception occurred above
             try:
-                con.close()
+                if con is not None:
+                    con.close()
             except:
                 # if closing the connections fails, simply do nothing
                 pass

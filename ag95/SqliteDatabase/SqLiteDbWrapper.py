@@ -2,7 +2,8 @@ from sqlite3 import connect
 from typing import (List,
                     AnyStr,
                     Dict,
-                    Literal)
+                    Literal,
+                    Optional)
 from datetime import (datetime,
                       timedelta)
 from time import sleep
@@ -119,7 +120,7 @@ class SqLiteDbWrapper():
         # 3. Construct the column list for the INSERT statement
         old_columns = [col[1] for col in columns_info]
         new_columns = [new_column_name if col == old_column_name else col for col in old_columns]
-        columns_to_insert = ', '.join(new_columns)
+        columns_to_insert = ', '.join([str(col) for col in new_columns])
         old_columns_to_select = ', '.join(old_columns)
 
         # 4. Copy data from the old table to the new table
@@ -151,15 +152,15 @@ class SqLiteDbWrapper():
 
     def return_records(self,
                        table_name: AnyStr,
-                       select_values: List[AnyStr] = None,
-                       where_statement: AnyStr = None,
-                       order: Literal['DESC', 'ASC'] = None,
+                       select_values: List[AnyStr] = [],
+                       where_statement: Optional[str] = None,
+                       order: Optional[Literal['DESC', 'ASC']] = None,
                        order_by: AnyStr = 'ID',
-                       limit: int = None) -> List[List]:
+                       limit: Optional[int] = None) -> List[List]:
 
         sql_command = f'SELECT '
         if select_values:
-            sql_command += ', '.join(select_values)
+            sql_command += ', '.join([str(val) for val in select_values])
         else:
             sql_command += '*'
         sql_command += f' FROM {table_name}'

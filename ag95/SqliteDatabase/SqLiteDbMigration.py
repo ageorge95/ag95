@@ -1,13 +1,14 @@
 from ag95 import (SqLiteColumnDef,
                   SqLiteDbWrapper)
 from typing import (AnyStr,
-                    List)
+                    List,
+                    Optional)
 
 class SqLiteDbMigration:
 
     def __init__(self,
                  database_path: AnyStr = 'database.db',
-                 all_tables_def: List = None):
+                 all_tables_def: Optional[List] = None):
 
         self.database_path = database_path
         if not all_tables_def:
