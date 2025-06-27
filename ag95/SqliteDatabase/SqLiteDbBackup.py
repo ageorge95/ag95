@@ -1,7 +1,7 @@
 from ag95 import configure_logger
 from os import (path,
                 remove,
-                mkdir)
+                makedirs)
 from threading import Thread
 from time import sleep
 from sqlite3 import connect
@@ -39,7 +39,7 @@ class SqLiteDbbackup():
         # create the root folder if missing
         if not path.isdir(path.dirname(self.output_filepath)):
             try:
-                mkdir(path.dirname(self.output_filepath))
+                makedirs(path.dirname(self.output_filepath))
             except:
                 pass
 

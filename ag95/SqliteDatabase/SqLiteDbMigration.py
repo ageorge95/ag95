@@ -3,6 +3,7 @@ from ag95 import (SqLiteColumnDef,
 from typing import (AnyStr,
                     List,
                     Optional)
+import os
 
 class SqLiteDbMigration:
 
@@ -21,6 +22,14 @@ class SqLiteDbMigration:
             self.all_tables_def = all_tables_def
 
     def migrate(self):
+
+        # create the db folder if missing
+        if not os.path.isdir(os.path.dirname(self.database_path)):
+            try:
+                os.makedirs(os.path.dirname(self.database_path))
+            except:
+                pass
+
         with SqLiteDbWrapper(database_path=self.database_path) as DB:
             current_table_columns = DB.get_tables_columns()
             for table_def in self.all_tables_def:
