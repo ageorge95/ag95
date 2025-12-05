@@ -143,9 +143,23 @@ class SinglePlot:
 
         # Check if full number format is requested
         if hasattr(self.plot, 'use_full_number_format') and self.plot.use_full_number_format:
-            # tickformat "," adds thousands separators (e.g. 1,000,000) and prevents SI prefixes (M, K)
-            update_args |= {'yaxis_tickformat': ','}
-            update_args |= {'xaxis_tickformat': ','}
+            # Use a smarter format that handles both large numbers and decimal places
+            update_args |= {'yaxis': {
+                'tickformat': ',.6~f',  # Fixed point format with up to 6 decimal places, remove trailing zeros
+                'exponentformat': 'none',  # Disable scientific notation
+                'hoverformat': ',.6~f'  # Same format for hover labels
+            }}
+
+            # Set number formatting for x-axis only if it's numeric (not datetime)
+            # Check if x_axis contains datetime objects
+            if len(self.plot.x_axis) > 0 and len(self.plot.x_axis[0]) > 0:
+                first_value = self.plot.x_axis[0][0]
+                if isinstance(first_value, (int, float)) and not isinstance(first_value, bool):
+                    update_args |= {'xaxis': {
+                        'tickformat': ',.6~f',
+                        'exponentformat': 'none',
+                        'hoverformat': ',.6~f'
+                    }}
 
         if any([self.plot.force_show_until_current_datetime, self.plot.grey_out_missing_data_until_current_datetime]):
             oldest_datapoint_refined = min([min(_) for _ in self.plot.x_axis])-timedelta(seconds=5)
@@ -292,9 +306,26 @@ class MultiRowPlot:
                                  col=1)
 
             if hasattr(plot, 'use_full_number_format') and plot.use_full_number_format:
-                # Update axis for this specific subplot row
-                fig.update_yaxes(tickformat=',', row=row_id, col=1)
-                fig.update_xaxes(tickformat=',', row=row_id, col=1)
+                # Update y-axis formatting for this subplot
+                fig.update_yaxes(
+                    tickformat=',.6~f',  # Fixed point format with up to 6 decimal places, remove trailing zeros
+                    exponentformat='none',
+                    hoverformat=',.6~f',  # Format for hover labels
+                    row=row_id,
+                    col=1
+                )
+
+                # Update x-axis formatting only if it's numeric (not datetime)
+                if len(plot.x_axis) > 0 and len(plot.x_axis[0]) > 0:
+                    first_value = plot.x_axis[0][0]
+                    if isinstance(first_value, (int, float)) and not isinstance(first_value, bool):
+                        fig.update_xaxes(
+                            tickformat=',.6~f',
+                            exponentformat='none',
+                            hoverformat=',.6~f',
+                            row=row_id,
+                            col=1
+                        )
 
             if any([plot.force_show_until_current_datetime, plot.grey_out_missing_data_until_current_datetime]):
                 oldest_datapoint_refined = min([min(_) for _ in plot.x_axis])-timedelta(seconds=5)
@@ -485,13 +516,26 @@ class MultiRowPlot:
 
             if hasattr(plot, 'use_full_number_format') and plot.use_full_number_format:
                 # Update layout for specific y-axis
-                # Note: x-axis formatting in this specific manual layout construction
-                # might affect all shared axes, but usually safe to set.
+                yaxis_key = f'yaxis{row_id}' if row_id > 1 else 'yaxis'
                 fig.update_layout(
-                    {f'yaxis{row_id}': dict(tickformat=',')}
+                    {yaxis_key: dict(
+                        tickformat=',.6~f',  # Fixed point format with up to 6 decimal places, remove trailing zeros
+                        exponentformat='none',
+                        hoverformat=',.6~f'  # Format for hover labels
+                    )}
                 )
-                # force the x-axis as well:
-                fig.update_layout(xaxis=dict(tickformat=','))
+
+                # Update x-axis only if it's numeric (not datetime)
+                if len(plot.x_axis) > 0 and len(plot.x_axis[0]) > 0:
+                    first_value = plot.x_axis[0][0]
+                    if isinstance(first_value, (int, float)) and not isinstance(first_value, bool):
+                        fig.update_layout(
+                            xaxis=dict(
+                                tickformat=',.6~f',
+                                exponentformat='none',
+                                hoverformat=',.6~f'
+                            )
+                        )
 
             # apply any force_show_until_current_datetime and/ or grey_out_missing_data_until_current_datetime constrains
             if any([plot.force_show_until_current_datetime, plot.grey_out_missing_data_until_current_datetime]):
