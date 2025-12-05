@@ -539,36 +539,36 @@ class MultiRowPlot:
 
             # apply any force_show_until_current_datetime and/ or grey_out_missing_data_until_current_datetime constrains
             if any([plot.force_show_until_current_datetime, plot.grey_out_missing_data_until_current_datetime]):
-                    oldest_datapoint_refined = min([min(_) for _ in plot.x_axis]) - timedelta(seconds=5)
-                    newest_datapoint_refined = max([max(_) for _ in plot.x_axis]) + timedelta(seconds=5)
+                oldest_datapoint_refined = min([min(_) for _ in plot.x_axis]) - timedelta(seconds=5)
+                newest_datapoint_refined = max([max(_) for _ in plot.x_axis]) + timedelta(seconds=5)
 
-                    if plot.grey_out_missing_data_until_current_datetime and not plot.force_show_until_current_datetime:
-                        # mark the missing data up until the current datetime with grey
-                        fig.add_vrect(x0=max([max(_) for _ in plot.x_axis]),
-                                      x1=plot.now,
-                                      fillcolor='grey',
-                                      opacity=0.5,
-                                      xref = 'x',
-                                      yref = f'y{row_id}')
+                if plot.grey_out_missing_data_until_current_datetime and not plot.force_show_until_current_datetime:
+                    # mark the missing data up until the current datetime with grey
+                    fig.add_vrect(x0=max([max(_) for _ in plot.x_axis]),
+                                  x1=plot.now,
+                                  fillcolor='grey',
+                                  opacity=0.5,
+                                  xref = 'x',
+                                  yref = f'y{row_id}')
 
-                        # limit the plot horizontally, to see the missing data until the current time
-                        fig.update_xaxes(range=[oldest_datapoint_refined, newest_datapoint_refined])
+                    # limit the plot horizontally, to see the missing data until the current time
+                    fig.update_xaxes(range=[oldest_datapoint_refined, newest_datapoint_refined])
 
-                    if plot.force_show_until_current_datetime and not plot.grey_out_missing_data_until_current_datetime:
-                        # force show up until the current datetime
-                        fig.update_xaxes(range=[oldest_datapoint_refined, plot.now])
+                if plot.force_show_until_current_datetime and not plot.grey_out_missing_data_until_current_datetime:
+                    # force show up until the current datetime
+                    fig.update_xaxes(range=[oldest_datapoint_refined, plot.now])
 
-                    if plot.force_show_until_current_datetime and plot.grey_out_missing_data_until_current_datetime:
-                        # force show up until the current datetime
-                        fig.update_layout(xaxis_range=[oldest_datapoint_refined, plot.now])
+                if plot.force_show_until_current_datetime and plot.grey_out_missing_data_until_current_datetime:
+                    # force show up until the current datetime
+                    fig.update_layout(xaxis_range=[oldest_datapoint_refined, plot.now])
 
-                        # mark the missing data up until the current datetime with grey
-                        fig.add_vrect(x0=max([max(_) for _ in plot.x_axis]),
-                                      x1=plot.now,
-                                      fillcolor='grey',
-                                      opacity=0.5,
-                                      xref = 'x',
-                                      yref = f'y{row_id}')
+                    # mark the missing data up until the current datetime with grey
+                    fig.add_vrect(x0=max([max(_) for _ in plot.x_axis]),
+                                  x1=plot.now,
+                                  fillcolor='grey',
+                                  opacity=0.5,
+                                  xref = 'x',
+                                  yref = f'y{row_id}')
 
         # FAKE XAXIS ANNOTATIONS DISABLED for now as it looks bad when a large number of datapoints are plotted
         # # create and add the fake x axis values via annotations for each subplot except the last bottom one
