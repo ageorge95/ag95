@@ -18,7 +18,8 @@ class ScatterPlotDef:
                  name: List = None,
                  force_show_until_current_datetime: bool = False,
                  grey_out_missing_data_until_current_datetime: bool = False,
-                 fill_method: List[Literal["tonexty", "tozeroy"]] | bool = None):
+                 fill_method: List[Literal["tonexty", "tozeroy"]] | bool = None,
+                 use_full_number_format: bool = False):
 
         self.x_axis = x_axis
         self.y_axis = y_axis
@@ -31,6 +32,7 @@ class ScatterPlotDef:
         self.force_show_until_current_datetime = force_show_until_current_datetime
         self.grey_out_missing_data_until_current_datetime = grey_out_missing_data_until_current_datetime
         self.fill_method = fill_method
+        self.use_full_number_format = use_full_number_format
 
         self.now = datetime.now()
 
@@ -46,7 +48,8 @@ class BarPlotDef:
                  name: List = None,
                  force_show_until_current_datetime: bool = False,
                  grey_out_missing_data_until_current_datetime: bool = False,
-                 forced_width: float = 0):
+                 forced_width: float = 0,
+                 use_full_number_format: bool = False):
 
         self.x_axis = x_axis
         self.y_axis = y_axis
@@ -59,6 +62,7 @@ class BarPlotDef:
         self.force_show_until_current_datetime = force_show_until_current_datetime
         self.grey_out_missing_data_until_current_datetime = grey_out_missing_data_until_current_datetime
         self.forced_width = forced_width
+        self.use_full_number_format = use_full_number_format
 
         self.now = datetime.now()
 
@@ -74,7 +78,8 @@ class HistogramPlotDef:
                  name: List = None,
                  force_show_until_current_datetime: bool = False,
                  grey_out_missing_data_until_current_datetime: bool = False,
-                 forced_width: float = 0):
+                 forced_width: float = 0,
+                 use_full_number_format: bool = False):
 
         self.x_axis = x_axis
         self.y_axis = y_axis
@@ -87,6 +92,7 @@ class HistogramPlotDef:
         self.force_show_until_current_datetime = force_show_until_current_datetime
         self.grey_out_missing_data_until_current_datetime = grey_out_missing_data_until_current_datetime
         self.forced_width = forced_width
+        self.use_full_number_format = use_full_number_format
 
         self.now = datetime.now()
 
@@ -134,6 +140,12 @@ class SinglePlot:
                 fig.add_hrect(**_)
 
         update_args = {}
+
+        # Check if full number format is requested
+        if hasattr(self.plot, 'use_full_number_format') and self.plot.use_full_number_format:
+            # tickformat "," adds thousands separators (e.g. 1,000,000) and prevents SI prefixes (M, K)
+            update_args |= {'yaxis_tickformat': ','}
+            update_args |= {'xaxis_tickformat': ','}
 
         if any([self.plot.force_show_until_current_datetime, self.plot.grey_out_missing_data_until_current_datetime]):
             oldest_datapoint_refined = min([min(_) for _ in self.plot.x_axis])-timedelta(seconds=5)
@@ -278,6 +290,11 @@ class MultiRowPlot:
                 fig.update_yaxes(range=[plot.forced_y_limits[0], plot.forced_y_limits[1]],
                                  row=row_id,
                                  col=1)
+
+            if hasattr(plot, 'use_full_number_format') and plot.use_full_number_format:
+                # Update axis for this specific subplot row
+                fig.update_yaxes(tickformat=',', row=row_id, col=1)
+                fig.update_xaxes(tickformat=',', row=row_id, col=1)
 
             if any([plot.force_show_until_current_datetime, plot.grey_out_missing_data_until_current_datetime]):
                 oldest_datapoint_refined = min([min(_) for _ in plot.x_axis])-timedelta(seconds=5)
@@ -465,6 +482,16 @@ class MultiRowPlot:
                 fig.update_layout(
                     {f'yaxis{row_id}': dict(range=[plot.forced_y_limits[0], plot.forced_y_limits[1]])}
                 )
+
+            if hasattr(plot, 'use_full_number_format') and plot.use_full_number_format:
+                # Update layout for specific y-axis
+                # Note: x-axis formatting in this specific manual layout construction
+                # might affect all shared axes, but usually safe to set.
+                fig.update_layout(
+                    {f'yaxis{row_id}': dict(tickformat=',')}
+                )
+                # force the x-axis as well:
+                fig.update_layout(xaxis=dict(tickformat=','))
 
             # apply any force_show_until_current_datetime and/ or grey_out_missing_data_until_current_datetime constrains
             if any([plot.force_show_until_current_datetime, plot.grey_out_missing_data_until_current_datetime]):
