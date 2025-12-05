@@ -402,6 +402,22 @@ class MultiRowPlot:
         # #############################################
         # ########## Initial layout configuration #####
         # #############################################
+        total_plots = len(self.plots)
+
+        # Use the same vertical spacing calculation as in make_subplots
+        vertical_spacing = (1 / total_plots) * 0.25
+        plot_height = (1 - (total_plots - 1) * vertical_spacing) / total_plots
+
+        # Build domains from bottom to top
+        domains = []
+        for i in range(total_plots):
+            bottom = i * (plot_height + vertical_spacing)
+            top = bottom + plot_height
+            domains.append([bottom, top])
+
+        # Reverse so first subplot is at the top
+        domains = domains[::-1]
+
         # initial plot layout
         layout = dict(
             hoversubplots="axis", # enable parallel cursor hovering over all the subplots
@@ -410,20 +426,28 @@ class MultiRowPlot:
             hovermode="x", # update data on hover by default
             grid=dict(rows=len(self.plots), columns=1), # pre-configure the structure of the plot
             xaxis=dict( # configure the x axis
-                # FAKE XAXIS ANNOTATIONS DISABLED for now as it looks bad when a large number of datapoints are plotted
-                # domain=[0, 1], # add the full possible domain range
-                anchor=f"y{len(self.plots)}", # Anchor to bottom y-axis
+                anchor=f"y{len(self.plots)}" if len(self.plots) > 1 else "y",  # Anchor to bottom y-axis
                 showticklabels=True # force the tick labels by default
             ),
         )
+
+        # Set domains for each y-axis
+        for row_id in range(1, total_plots + 1):
+            yaxis_name = f'yaxis{row_id}' if row_id > 1 else 'yaxis'
+            layout[yaxis_name] = dict(
+                domain=domains[row_id - 1],
+                showticklabels=True
+            )
 
         # update the height if requested
         if self.height:
             layout |= dict(height=self.height)
 
-        # remove the excessive white margins
-        layout |= {'margin': dict(l=0, r=0, t=25, b=25)} if not self.title \
-            else {'margin': dict(l=0, r=0, t=42, b=25)}
+        # Use the same margin calculation as in _return_html_plot_without_hoversubplots
+        if not self.title:
+            layout |= {'margin': dict(l=0, r=0, t=25, b=25)}
+        else:
+            layout |= {'margin': dict(l=0, r=0, t=42, b=25)}
 
         # FAKE XAXIS ANNOTATIONS DISABLED for now as it looks bad when a large number of datapoints are plotted
         # # NOTE currently there is no automatic way to add the x_axis under each subplot using go.Figure()
@@ -495,6 +519,29 @@ class MultiRowPlot:
         # #############################################
         # ########## Post figure creation logic #######
         # #############################################
+
+        # Add subplot titles as annotations - place them just above each subplot
+        for row_id, plot in enumerate(self.plots, 1):
+            if plot.title:
+                # Get the domain for this subplot
+                domain = domains[row_id - 1]
+
+                # Position the title at the top of the domain with a small offset
+                y_position = domain[1] + 0  # Slightly above the top of the plot, no offset needed to avoid overlapping
+
+                # Add annotation as title for this subplot
+                fig.add_annotation(
+                    xref="paper",
+                    yref="paper",
+                    x=0.5,  # Center horizontally
+                    y=y_position,
+                    text=plot.title,
+                    showarrow=False,
+                    font=dict(size=16, color="black"),
+                    yanchor="bottom",
+                    xanchor="center"
+                )
+
         for row_id, plot in enumerate(self.plots, 1):
             # add custom v_rects over the created figure
             if plot.v_rects:
