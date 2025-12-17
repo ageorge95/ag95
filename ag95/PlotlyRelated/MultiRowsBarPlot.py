@@ -412,6 +412,40 @@ def suite_of_tests(use_hoversubplots):
           f'\n triple_line & names];'
           f'\n press any key to continue, if the manual test is passed (with use_hoversubplots set to {use_hoversubplots}).')
 
+
+    # TEST MultiRowsBarPlot
+    # [single_line & names & x_annotations,
+    # double_line & names,
+    # triple_line & names & x_annotations]
+    MultiRowPlot(plots=[BarPlotDef(x_axis=[[1, 2, 3, 4, 5]],
+                                   y_axis=[[2, 2, 2, 3, 4]],
+                                   name=['my_first_plot_first_line'],
+                                   x_annotations=[[3.5, "Limit A"]]),
+                        BarPlotDef(x_axis=[[1, 2, 3, 4, 5],
+                                           [1, 2, 3, 4, 5]],
+                                   y_axis=[[2, 2, 2, 3, 4],
+                                           [3, 3, 3, 4, 5]],
+                                   name=['my_second_plot_first_line',
+                                         'my_second_plot_second_line']),
+                        BarPlotDef(x_axis=[[1, 2, 3, 4, 5],
+                                           [1, 2, 3, 4, 5],
+                                           [1, 2, 3, 4, 5]],
+                                   y_axis=[[2, 2, 2, 3, 4],
+                                           [3, 3, 3, 4, 5],
+                                           [4, 4, 4, 5, 6]],
+                                   name=['my_third_plot_first_line',
+                                         'my_third_plot_second_line',
+                                         'my_third_plot_third_line'],
+                                   x_annotations=[[4.5, "Limit B"]])]).return_html_BarPlot(show_fig=True,
+                                                                                           use_hoversubplots=use_hoversubplots)
+    input(f'You should see MultiRowsBarPlot'
+          f'\n [single_line & names & x_annotations,'
+          f'\n double_line & names,'
+          f'\n triple_line & names & x_annotations];'
+          f'\n NOTE: Text should be at the TOP of the subplot.'
+          f'\n press any key to continue, if the manual test is passed (with use_hoversubplots set to {use_hoversubplots}).')
+
+
 if __name__ == '__main__':
     print('No automatic tests implemented so far; Please check the expected behavior manually.')
 

@@ -149,4 +149,17 @@ if __name__ == '__main__':
     input(f'You should see SingleBarPlot [double_line & name & force_show_until_current_datetime & grey_out_missing_data_until_current_datetime];'
           f' press any key to continue, if the manual test is passed.')
 
+    # TEST SingleBarPlot [double_line & name & x_annotations]
+    SinglePlot(plot=BarPlotDef(x_axis=[[1, 2, 3, 4, 5],
+                                       [1, 2, 3, 4, 5]],
+                               y_axis=[[2, 2, 2, 3, 4],
+                                       [3, 3, 3, 4, 5]],
+                               name=['my_plot_line_1',
+                                     'my_plot_line_2'],
+                               x_annotations=[[3.5, "Threshold X"],
+                                              [4.5, "Threshold Y"]])).return_html_BarPlot(show_fig=True)
+    input(f'You should see SingleBarPlot [double_line & name & x_annotations];'
+          f' NOTE: Text should be at the TOP of the plot.'
+          f' press any key to continue, if the manual test is passed.')
+
     print('All tests are PASSED !')

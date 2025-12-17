@@ -19,7 +19,8 @@ class ScatterPlotDef:
                  force_show_until_current_datetime: bool = False,
                  grey_out_missing_data_until_current_datetime: bool = False,
                  fill_method: List[Literal["tonexty", "tozeroy"]] | bool = None,
-                 use_full_number_format: bool = False):
+                 use_full_number_format: bool = False,
+                 x_annotations: List[List] = None):
 
         self.x_axis = x_axis
         self.y_axis = y_axis
@@ -33,6 +34,7 @@ class ScatterPlotDef:
         self.grey_out_missing_data_until_current_datetime = grey_out_missing_data_until_current_datetime
         self.fill_method = fill_method
         self.use_full_number_format = use_full_number_format
+        self.x_annotations = x_annotations
 
         self.now = datetime.now()
 
@@ -49,7 +51,8 @@ class BarPlotDef:
                  force_show_until_current_datetime: bool = False,
                  grey_out_missing_data_until_current_datetime: bool = False,
                  forced_width: float = 0,
-                 use_full_number_format: bool = False):
+                 use_full_number_format: bool = False,
+                 x_annotations: List[List] = None):
 
         self.x_axis = x_axis
         self.y_axis = y_axis
@@ -63,6 +66,7 @@ class BarPlotDef:
         self.grey_out_missing_data_until_current_datetime = grey_out_missing_data_until_current_datetime
         self.forced_width = forced_width
         self.use_full_number_format = use_full_number_format
+        self.x_annotations = x_annotations
 
         self.now = datetime.now()
 
@@ -79,7 +83,8 @@ class HistogramPlotDef:
                  force_show_until_current_datetime: bool = False,
                  grey_out_missing_data_until_current_datetime: bool = False,
                  forced_width: float = 0,
-                 use_full_number_format: bool = False):
+                 use_full_number_format: bool = False,
+                 x_annotations: List[List] = None):
 
         self.x_axis = x_axis
         self.y_axis = y_axis
@@ -93,6 +98,7 @@ class HistogramPlotDef:
         self.grey_out_missing_data_until_current_datetime = grey_out_missing_data_until_current_datetime
         self.forced_width = forced_width
         self.use_full_number_format = use_full_number_format
+        self.x_annotations = x_annotations
 
         self.now = datetime.now()
 
@@ -201,6 +207,40 @@ class SinglePlot:
 
         fig.update_layout(**update_args)
 
+        if hasattr(self.plot, 'x_annotations') and self.plot.x_annotations:
+                for prediction in self.plot.x_annotations:
+                    # add dashed lines
+                    fig.add_shape(
+                        type="line",
+                        x0=prediction[0],
+                        x1=prediction[0],
+                        y0=0,
+                        y1=1,
+                        xref="x",
+                        yref="paper",
+                        layer="above",
+                        line=dict(
+                            color="Red",
+                            width=2,
+                            dash="dash",
+                        )
+                    )
+
+                    # add text annotation
+                    fig.add_annotation(
+                        x=prediction[0],
+                        y=1,    # Place exactly on top of the plot area
+                        xref="x",
+                        yref="paper",
+                        text=f"{prediction[1]}",
+                        showarrow=False,
+                        yanchor="bottom", # Sit on top of the y position
+                        font=dict(
+                            color="Red",
+                            size=12
+                        )
+                    )
+
         if show_fig:
             fig.show()
 
@@ -299,6 +339,43 @@ class MultiRowPlot:
                 for _ in plot.h_rects:
                     fig.add_hrect(**_ | {'row': row_id,
                                          'col': 1})
+
+            if hasattr(plot, 'x_annotations') and plot.x_annotations:
+                for prediction in plot.x_annotations:
+                    # add dashed lines
+                    fig.add_shape(
+                        type="line",
+                        x0=prediction[0], 
+                        x1=prediction[0],
+                        y0=0,
+                        y1=1,
+                        xref=f"x{row_id}" if row_id > 1 else "x",
+                        yref=f"y{row_id} domain" if row_id > 1 else "y domain",
+                        layer="above",
+                        line=dict(
+                            color="Red",
+                            width=2,
+                            dash="dash",
+                        ),
+                        row=row_id,
+                        col=1
+                    )
+                    # add text annotation
+                    fig.add_annotation(
+                        x=prediction[0],
+                        y=1,   # Place exactly on top of the subplot domain
+                        xref=f"x{row_id}" if row_id > 1 else "x",
+                        yref=f"y{row_id} domain" if row_id > 1 else "y domain",
+                        text=f"{prediction[1]}",
+                        showarrow=False,
+                        yanchor="bottom",
+                        font=dict(
+                            color="Red",
+                            size=12
+                        ),
+                        # Note: we explicitely avoid passing row=row_id, col=1 here because we are using domain refs
+                        # passing row/col would override yref to be data-based
+                    )
 
             if plot.forced_y_limits:
                 fig.update_yaxes(range=[plot.forced_y_limits[0], plot.forced_y_limits[1]],
@@ -424,11 +501,6 @@ class MultiRowPlot:
             hoverlabel_namelength=-1, # fully show the trace name by default
             title=dict(text=self.title), # the title of the plot (NOT of the subplots but of the larger plot)
             hovermode="x", # update data on hover by default
-            grid=dict(rows=len(self.plots), columns=1), # pre-configure the structure of the plot
-            xaxis=dict( # configure the x axis
-                anchor=f"y{len(self.plots)}" if len(self.plots) > 1 else "y",  # Anchor to bottom y-axis
-                showticklabels=True # force the tick labels by default
-            ),
         )
 
         # Set domains for each y-axis
@@ -438,6 +510,34 @@ class MultiRowPlot:
                 domain=domains[row_id - 1],
                 showticklabels=True
             )
+            
+            # Shared Data Axis Logic:
+            # The Main Axis 'xaxis' is used for ALL data traces to ensure perfect hover synchronization.
+            # We anchor it to the BOTTOM-MOST plot (row_id = total_plots) so it behaves normally for that plot.
+            # For all other UPPER plots, we create "Phantom Axes" just for visual ticks.
+            
+            # Bottom Plot (Row N) -> Uses the Main Axis 'xaxis'
+            if row_id == total_plots:
+                 layout['xaxis'] = dict(
+                    anchor=yaxis_name.replace('axis', ''), # anchor to yN
+                    showticklabels=True,
+                    side='bottom'
+                 )
+            else:
+                 # Upper Plots -> Use Phantom Axes (xaxis2, xaxis3...) just for visuals
+                 # We use sequential IDs based on row (row 1 -> xaxis2, row 2 -> xaxis3... to avoid collision with main 'xaxis')
+                 # ACTUALLY, simpler naming:
+                 # Main is xaxis. 
+                 # Let's use xaxis_name = xaxis2, xaxis3...
+                 phantom_xaxis_name = f'xaxis{row_id + 1}'
+                 
+                 layout[phantom_xaxis_name] = dict(
+                    anchor=yaxis_name.replace('axis', ''), # anchor to y, y2...
+                    showticklabels=True,
+                    matches='x', # link range/zoom to main axis
+                    side='bottom',
+                    overlaying='x' # CRITICAL: Overlay on main axis to allow visibility without claiming domain
+                 )
 
         # update the height if requested
         if self.height:
@@ -448,33 +548,6 @@ class MultiRowPlot:
             layout |= {'margin': dict(l=0, r=0, t=25, b=25)}
         else:
             layout |= {'margin': dict(l=0, r=0, t=42, b=25)}
-
-        # FAKE XAXIS ANNOTATIONS DISABLED for now as it looks bad when a large number of datapoints are plotted
-        # # NOTE currently there is no automatic way to add the x_axis under each subplot using go.Figure()
-        # # so I had to come up with this mechanism that adds fake x axis values via annotations
-        # # first compute the domain for each subplot
-        # total_subplots_number = len(self.plots)
-        # max_domain_per_subplot = 1 / total_subplots_number
-        # domain_space_between_subplots = 0.05 # controls the space between subplots
-        # y_domains = dict([f'yaxis{total_subplots_number - _}' if (total_subplots_number - _) > 1 else 'yaxis',
-        #                   [max_domain_per_subplot * (_) + (domain_space_between_subplots if _ else 0),
-        #                    max_domain_per_subplot * (_ + 1)]] for _ in range(total_subplots_number))
-        # # example for total_subplots_number == 3
-        # # y_domains = {
-        # #     'yaxis3': [0.0, 0.33],
-        # #     'yaxis2': [0.38, 0.66],
-        # #     'yaxis': [0.71, 1.0]
-        # # }
-        # # example for total_subplots_number == 2
-        # # y_domains = {
-        # #     'yaxis2': [0.0, 0.5],
-        # #     'yaxis': [0.55, 1.0]
-        # # }
-        #
-        # # add the domains for each subplot
-        # for row_id, _ in enumerate(self.plots, 1):
-        #     relevant_y_axis_name = f'yaxis{row_id}' if row_id > 1 else 'yaxis'
-        #     layout |= {relevant_y_axis_name: dict(domain=y_domains[relevant_y_axis_name])}
 
         # #############################################
         # ########## Pre figure creation logic ########
@@ -487,7 +560,7 @@ class MultiRowPlot:
                 kwargs = {
                     'x': plot.x_axis[i],
                     'y': plot.y_axis[i],
-                    'xaxis': 'x',
+                    'xaxis': 'x', # ALL traces go to the main axis for sync
                     'yaxis': f'y{row_id}' if row_id > 1 else 'y',
                     'showlegend': self.showlegend
                 }
@@ -510,6 +583,31 @@ class MultiRowPlot:
                 subplot = plot_type(**kwargs)
 
                 subplots_data.append(subplot)
+
+        # Ghost Trace Injection for Upper Subplots
+        # We need to add invisible traces to the phantom axes (xaxis2, xaxis3...) 
+        # to force Plotly to render them, otherwise they stay hidden.
+        for row_id in range(1, total_plots): # Skip the last subplot (which uses the real axis)
+             phantom_xaxis_name = f'xaxis{row_id + 1}' # matches the creation logic above
+             
+             # Use the first data point from the plot to ensure the axis range isn't distorted
+             # Default to 0 if no data exists (edge case)
+             try:
+                 ghost_x = plot.x_axis[0][0]
+                 ghost_y = plot.y_axis[0][0]
+             except (IndexError, TypeError):
+                 ghost_x = 0
+                 ghost_y = 0
+
+             ghost_trace = go.Scatter(
+                 x=[ghost_x], y=[ghost_y], 
+                 xaxis=phantom_xaxis_name.replace('axis', ''), # x2, x3...
+                 yaxis=f'y{row_id}' if row_id > 1 else 'y',
+                 opacity=0,
+                 showlegend=False,
+                 hoverinfo='skip'
+             )
+             subplots_data.append(ghost_trace)
 
         # #############################################
         # ########## figure creation logic ############
@@ -548,6 +646,40 @@ class MultiRowPlot:
                 for _ in plot.v_rects:
                     fig.add_vrect(**_ | {'xref': 'x',
                                          'yref': f'y{row_id}'})
+
+            if hasattr(plot, 'x_annotations') and plot.x_annotations:
+                for prediction in plot.x_annotations:
+                    # add dashed lines
+                    fig.add_shape(
+                        type="line",
+                        x0=prediction[0],
+                        x1=prediction[0],
+                        y0=0,
+                        y1=1,
+                        xref=f"x{row_id}" if row_id > 1 else "x",
+                        yref=f"y{row_id} domain" if row_id > 1 else "y domain",
+                        layer="above",
+                        line=dict(
+                            color="Red",
+                            width=2,
+                            dash="dash",
+                        )
+                    )
+
+                    # add text annotation
+                    fig.add_annotation(
+                        x=prediction[0],
+                        y=1, # Place exactly on top of the subplot (calculated domain)
+                        xref="x", # Correctly target shared axis
+                        yref=f"y{row_id} domain" if row_id > 1 else "y domain",
+                        text=f"{prediction[1]}",
+                        showarrow=False,
+                        yanchor="bottom",
+                        font=dict(
+                            color="Red",
+                            size=12
+                        )
+                    )
 
             # add custom h_rects over the created figure
             if plot.h_rects:
