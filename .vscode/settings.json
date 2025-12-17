@@ -1,0 +1,9 @@
+{
+    "terminal.integrated.env.windows": {
+        "PYTHONPATH": "${workspaceFolder}"
+    },
+    "launch": {
+        "configurations": [],
+        "compounds": []
+    }
+}
