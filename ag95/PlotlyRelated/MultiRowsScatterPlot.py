@@ -446,6 +446,20 @@ def suite_of_tests(use_hoversubplots):
           f'\n NOTE: Text should be at the TOP of the subplot.'
           f'\n press any key to continue, if the manual test is passed (with use_hoversubplots set to {use_hoversubplots}).')
 
+    # TEST MultiRowsScatterPlot
+    # [single_line & names & x_annotations with datetimes]
+    MultiRowPlot(plots=[ScatterPlotDef(x_axis=[[datetime.now()-timedelta(minutes=10),
+                                                datetime.now()-timedelta(minutes=9),
+                                                datetime.now()-timedelta(minutes=8),
+                                                datetime.now()-timedelta(minutes=7)]],
+                                       y_axis=[[2, 3, 4, 5]],
+                                       name=['my_first_plot_first_line'],
+                                       x_annotations=[[datetime.now()-timedelta(minutes=8.5), "Time Annotation"]])]).return_html_ScatterPlot(show_fig=True,
+                                                                                                    use_hoversubplots=use_hoversubplots)
+    input(f'You should see MultiRowsScatterPlot'
+          f'\n [single_line & names & x_annotations with datetimes];'
+          f'\n NOTE: Text should be at the TOP of the subplot.'
+          f'\n press any key to continue, if the manual test is passed (with use_hoversubplots set to {use_hoversubplots}).')
 
 if __name__ == '__main__':
     print('No automatic tests implemented so far; Please check the expected behavior manually.')
