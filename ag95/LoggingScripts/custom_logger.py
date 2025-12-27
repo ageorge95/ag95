@@ -51,7 +51,7 @@ def _check_log_destination(destination_path):
 def configure_logger(log_name: str = "runtime_log.log",
                      maxBytes: int = 20 * 1024 * 1024,
                      backupCount: int = 2,
-                     log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] = DEBUG,
+                     log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] = INFO,
                      propagate_logger: bool = True,
                      allow_handlers_ovewrite_at_runtime: bool = False):
 
