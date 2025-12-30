@@ -1,6 +1,8 @@
 from django.conf import settings
 from django import setup
 from django import template
+from ag95.PlotlyRelated.PlotlyRelatedBase import (SinglePlot,
+                                                  ScatterPlotDef)
 
 settings.configure(TEMPLATES=[
     {
@@ -64,7 +66,26 @@ if __name__ == '__main__':
                              {'text_color': 'orange', 'text': 'text_24'}],
                             [{'text_color': 'black', 'text': 'text_25'},
                              {'text_color': 'red', 'text': 'text_26'},
-                             {'text_color': 'orange', 'text': 'text_27'}]]}
+                             {'text_color': 'orange', 'text': 'text_27'}]]},
+                  {'table_id': 'ID_3',
+                   'table_title': 'My Table 3',
+                   'headers': ['header_1', 'header_2'],
+                   'restrict_width_columns': str([0]),
+                   'order': {'columnID': 1,
+                             'direction': 'desc'},
+                   'pageLength': 10,
+                   'rows': [[{'text_color': 'black', 'text': 'text_28'},
+                             {'text_color': 'red', 'text': SinglePlot(plot=ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
+                                                                                          y_axis=[[2, 2, 2, 3,
+                                                                                                   4]])).return_html_ScatterPlot()}],
+                            [{'text_color': 'black', 'text': 'text_29'},
+                             {'text_color': 'red', 'text': SinglePlot(plot=ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
+                                                                                          y_axis=[[2, 2, 2, 3,
+                                                                                                   4]])).return_html_ScatterPlot()}],
+                            [{'text_color': 'black', 'text': 'text_30'},
+                             {'text_color': 'red', 'text': SinglePlot(plot=ScatterPlotDef(x_axis=[[1, 2, 3, 4, 5]],
+                                                                                          y_axis=[[2, 2, 2, 3,
+                                                                                                   4]])).return_html_ScatterPlot()}]]}
                   ]})
 
     with open('DataTableFull.html', 'w') as html_out:
