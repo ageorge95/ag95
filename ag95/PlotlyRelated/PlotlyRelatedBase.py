@@ -147,6 +147,9 @@ class SinglePlot:
 
         update_args = {}
 
+        # fully show the trace name by default
+        update_args |= {'hoverlabel_namelength': -1}
+
         # Check if full number format is requested
         if hasattr(self.plot, 'use_full_number_format') and self.plot.use_full_number_format:
             # Use a smarter format that handles both large numbers and decimal places
