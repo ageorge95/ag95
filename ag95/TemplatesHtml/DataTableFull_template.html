@@ -7,6 +7,7 @@
     <script src="https://cdn.datatables.net/2.3.6/js/dataTables.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-3.3.1.min.js"></script>
     <meta charset=utf-8 />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{page_title}}</title>
 	<style>
       body {
@@ -51,6 +52,26 @@
 
   <body>
   <script>
+  // Simple mobile/tablet detection based on user agent
+  function isMobileOrTablet() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i.test(userAgent);
+  }
+
+  // Disable Plotly interactions on mobile/tablet
+  function disablePlotlyInteractions() {
+    if (isMobileOrTablet()) {
+      const plots = document.querySelectorAll('.plotly-graph-div');
+      plots.forEach(function(plot) {
+        Plotly.relayout(plot, {
+          dragmode: false,
+          scrollZoom: false,
+          hovermode: false
+        });
+      });
+    }
+  }
+
   $(document).ready(function () {
     {% for table in tables %}
       var table = $('#{{table.table_id}}').DataTable({
@@ -77,6 +98,7 @@
         for (var i = 0; i < doc.length; i++) {
             Plotly.relayout(doc[i], {autosize: true});
         }
+        disablePlotlyInteractions();
       });
     {% endfor %}
 
@@ -85,6 +107,9 @@
     for (var i = 0; i < doc.length; i++) {
         Plotly.relayout(doc[i], {autosize: true});
     }
+
+    // Disable Plotly interactions on mobile/tablet
+    disablePlotlyInteractions();
 
   });
 </script>
