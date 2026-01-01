@@ -25,6 +25,11 @@ setup(
         "SqliteDatabase": [
             'concurrent_log_handler'
         ],
+        "SqliteDatabaseService": [
+            'concurrent_log_handler',
+            'flask',
+            'waitress'
+        ],
         "GenericDatabase": [
             'concurrent_log_handler'
         ],

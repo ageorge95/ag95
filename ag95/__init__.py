@@ -47,6 +47,12 @@ try:
 except:
     pass
 
+# ############## SqliteDatabaseService #################
+try:
+    from .SqliteDatabaseService.SqLiteDbWrapperService import initialize_SqliteDbWrapper_service
+except:
+    pass
+
 # ############## GenericDatabase #################
 try:
     from .GenericDatabase.DbWrapper import (DbWrapper,
