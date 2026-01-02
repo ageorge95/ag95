@@ -86,6 +86,12 @@ Currently ag95 has the following modules and utilities.:
       <td>SqLiteDbWrapper</td>
       <td>Offers utilities for managing and manipulating SQLite databases.</td>
     </tr>
+    <!-- SqliteDatabaseService group -->
+    <tr>
+      <td rowspan="1">SqLiteDbWrapperService</td>
+      <td>SqLiteDbWrapperService</td>
+      <td>Flask service served by waitress that wraps all the SqliteDb methods in a highly efficient manner.</td>
+    </tr>
     <!-- GenericDatabase group -->
     <tr>
       <td rowspan="3">GenericDatabase</td>
