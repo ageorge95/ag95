@@ -18,7 +18,7 @@ class SqLiteColumnDef:
 class SqLiteDbWrapper():
     def __init__(self,
                  database_path: AnyStr = 'database.db',
-                 timeout: int = 60,
+                 timeout: int = 5*60,
                  use_wal: bool = True):
         self.database_path = database_path
         self.con = connect(database_path, timeout=timeout)
