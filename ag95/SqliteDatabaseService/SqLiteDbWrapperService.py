@@ -244,7 +244,7 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
 
     @app.post('/backup_db')
     def backup_db():
-        payload = request.json or {}
+        payload = request.get_json(silent=True) or {}
         # Default to database_BAK.db if not specified
         output_filepath = payload.get('output_filepath', 'database_BAK.db')
 
@@ -256,7 +256,7 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
 
     @app.post('/migrate_db')
     def migrate_db():
-        payload = request.json or {}
+        payload = request.get_json(silent=True) or {}
         raw_defs = payload.get('all_tables_def')
 
         final_defs = None
@@ -283,10 +283,6 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
     )
 
 if __name__ == '__main__':
-    from ag95 import SqLiteDbMigration
-
-    SqLiteDbMigration().migrate()
-
     SERVICE_PORT = 5834
 
     detached_thread = threading.Thread(target=initialize_SqliteDbWrapper_service,
@@ -294,6 +290,20 @@ if __name__ == '__main__':
     detached_thread.start()
 
     with requests.Session() as session:
+
+        migration_payload = {
+            "all_tables_def": [
+                {
+                    "table_name": "my_db_table_name",
+                    "columns_def": [
+                        {"column_name": "my_column_name1", "column_type": "INTEGER"},
+                        {"column_name": "my_column_name2", "column_type": "INTEGER"}
+                    ]
+                }
+            ]
+        }
+        session.post(f'http://localhost:{SERVICE_PORT}/migrate_db',
+                     json=migration_payload)
 
         # TEST correct column names query
         result = session.get(f'http://localhost:{SERVICE_PORT}/tables_columns').json()
@@ -334,5 +344,8 @@ if __name__ == '__main__':
                              json={'table_name': 'my_db_table_name'}).json()
         expected = [[1, timestamp, 10, 5]]
         assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
+        # TEST db backup
+        session.post(f'http://localhost:{SERVICE_PORT}/backup_db')
 
     print('All tests are PASSED !')
