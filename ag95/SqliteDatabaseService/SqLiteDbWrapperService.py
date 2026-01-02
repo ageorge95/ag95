@@ -7,6 +7,11 @@ from flask import (Flask,
                    request)
 from waitress import serve
 from datetime import datetime
+from typing import (List,
+                    AnyStr,
+                    Optional,
+                    Literal,
+                    Dict)
 import threading
 import queue
 import os
@@ -88,33 +93,50 @@ class ServiceBackend(metaclass=Singleton_without_cache):
             lambda db: db.get_tables_columns()
         )
 
-    def insert_record(self, table_name, column_names, column_values):
+    def insert_record(self,
+                      table_name: AnyStr,
+                      column_names: List,
+                      column_values: List):
         self.worker.execute(
-            lambda db: db.append_in_table(
-                table_name,
-                column_names,
-                column_values
-            )
+            lambda db: db.append_in_table(table_name=table_name,
+                                          column_names=column_names,
+                                          column_values=column_values)
         )
 
-    def get_records(self, **kwargs):
+    def get_records(self,
+                    table_name: AnyStr,
+                    select_values: List[AnyStr] = (),
+                    where_statement: Optional[str] = None,
+                    order: Optional[Literal['DESC', 'ASC']] = None,
+                    order_by: AnyStr = 'ID',
+                    limit: Optional[int] = None):
         return self.worker.execute(
-            lambda db: db.return_records(**kwargs)
+            lambda db: db.return_records(table_name=table_name,
+                                         select_values=select_values,
+                                         where_statement=where_statement,
+                                         order=order,
+                                         order_by=order_by,
+                                         limit=limit)
         )
 
-    def update_record(self, table_name, record_id, data, skip_empty):
+    def update_record(self,
+                      table_name: AnyStr,
+                      record_ID: int,
+                      data: Dict,
+                      skip_new_empty_entries: bool = False):
         self.worker.execute(
-            lambda db: db.update_record(
-                table_name,
-                record_id,
-                data,
-                skip_empty
-            )
+            lambda db: db.update_record(table_name=table_name,
+                                        record_ID=record_ID,
+                                        data=data,
+                                        skip_new_empty_entries=skip_new_empty_entries)
         )
 
-    def delete_record(self, table_name, record_id):
+    def delete_record(self,
+                      table_name: AnyStr,
+                      record_ID: int):
         self.worker.execute(
-            lambda db: db.delete_record(table_name, record_id)
+            lambda db: db.delete_record(table_name=table_name,
+                                        record_ID=record_ID)
         )
 
 def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
@@ -133,21 +155,47 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
     def tables_columns():
         return jsonify(backend.get_tables_columns())
 
-    @app.post('/insert_record/<table>')
-    def insert_record(table):
+    @app.post('/insert_record')
+    def insert_record():
         payload = request.json
         backend.insert_record(
-            table,
-            payload['column_names'],
-            payload['column_values']
+            table_name=payload['table_name'],
+            column_names=payload['column_names'],
+            column_values=payload['column_values']
         )
         return {'status': 'ok'}
 
-    @app.get('/get_records/<table>')
-    def get_records(table):
+    @app.post('/update_record')
+    def update_record():
+        payload = request.json
+        backend.update_record(
+            table_name=payload['table_name'],
+            record_ID=payload['record_ID'],
+            data=payload['data'],
+            skip_new_empty_entries=payload.get('skip_new_empty_entries')
+        )
+        return {'status': 'ok'}
+
+    @app.post('/delete_record')
+    def delete_record():
+        payload = request.json
+        backend.delete_record(
+            table_name=payload['table_name'],
+            record_ID=payload['record_ID']
+        )
+        return {'status': 'ok'}
+
+    @app.get('/get_records')
+    def get_records():
+        payload = request.json
         return jsonify(
             backend.get_records(
-                table_name=table
+                table_name=payload['table_name'],
+                select_values=payload.get('select_values'),
+                where_statement=payload.get('where_statement'),
+                order=payload.get('order'),
+                order_by=payload.get('order_by'),
+                limit=payload.get('limit')
             )
         )
 
@@ -178,11 +226,37 @@ if __name__ == '__main__':
 
         # TEST correct new data append
         timestamp = int(datetime.now().timestamp())
-        session.post(f'http://localhost:{SERVICE_PORT}/insert_record/my_db_table_name',
-                     json={'column_names': ['my_column_name1', 'my_column_name2'],
+        session.post(f'http://localhost:{SERVICE_PORT}/insert_record',
+                     json={'table_name': 'my_db_table_name',
+                           'column_names': ['my_column_name1', 'my_column_name2'],
                            'column_values': [7, 5]})
-        result = session.get(f'http://localhost:{SERVICE_PORT}/get_records/my_db_table_name').json()
+        result = session.get(f'http://localhost:{SERVICE_PORT}/get_records',
+                             json={'table_name': 'my_db_table_name'}).json()
         expected = [[1, timestamp, 7, 5]]
+        assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
+        # TEST correct filtered data return, 1 requested column
+        result = session.get(f'http://localhost:{SERVICE_PORT}/get_records',
+                             json={'table_name': 'my_db_table_name',
+                                   'select_values': ['my_column_name1']}).json()
+        expected = [[7]]
+        assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
+        # TEST correct filtered data return, 2 requested columns
+        result = session.get(f'http://localhost:{SERVICE_PORT}/get_records',
+                             json={'table_name': 'my_db_table_name',
+                                   'select_values': ['my_column_name1', 'my_column_name2']}).json()
+        expected = [[7, 5]]
+        assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
+
+        # TEST correct record update
+        session.post(f'http://localhost:{SERVICE_PORT}/update_record',
+                     json={'table_name': 'my_db_table_name',
+                           'record_ID': 1,
+                           'data': {'my_column_name1': 10}})
+        result = session.get(f'http://localhost:{SERVICE_PORT}/get_records',
+                             json={'table_name': 'my_db_table_name'}).json()
+        expected = [[1, timestamp, 10, 5]]
         assert result == expected, f'wrong value returned ! expected  {expected}, got {result}'
 
     print('All tests are PASSED !')
