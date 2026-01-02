@@ -24,6 +24,8 @@ class SqLiteDbWrapper():
         self.con = connect(database_path, timeout=timeout)
         if use_wal:
             self.con.execute('pragma journal_mode=wal')
+        else:
+            self.con.execute('pragma journal_mode=delete')
 
     def __enter__(self):
         return self
