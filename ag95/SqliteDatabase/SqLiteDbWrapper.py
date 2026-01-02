@@ -18,10 +18,12 @@ class SqLiteColumnDef:
 class SqLiteDbWrapper():
     def __init__(self,
                  database_path: AnyStr = 'database.db',
-                 timeout: int = 60):
+                 timeout: int = 60,
+                 use_wal: bool = True):
         self.database_path = database_path
         self.con = connect(database_path, timeout=timeout)
-        self.con.execute('pragma journal_mode=wal')
+        if use_wal:
+            self.con.execute('pragma journal_mode=wal')
 
     def __enter__(self):
         return self
