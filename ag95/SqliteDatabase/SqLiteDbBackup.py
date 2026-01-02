@@ -30,9 +30,44 @@ class SqLiteDbbackup():
         if self.print_progress:
             self._log.info(f'DB backup - {status}: Copied {total - remaining} of {total} pages...')
 
-    def backup_db(self):
+    def vacuum_db(self, connection=None):
         start = datetime.now()
-        # if the destination db exists remove it first, this significantly decreases the backup time
+
+        # If an existing connection is provided, use it.
+        # Otherwise, open a temporary new one (legacy behavior).
+        local_con = None
+        target_con = connection
+
+        try:
+            if target_con is None:
+                local_con = connect(self.input_filepath)
+                target_con = local_con
+
+            # VACUUM requires no active transaction.
+            # If the worker left a transaction open (unlikely with isolation_level=None), this might fail.
+            target_con.execute("VACUUM")
+
+            self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
+        except:
+            # Only log/raise, do not close the external connection
+            raise Exception(format_exc(chain=False))
+        finally:
+            # Only close the connection if we created it locally
+            if local_con is not None:
+                local_con.close()
+
+    def backup_db(self, source_connection=None):
+        # 1. VACUUM first (Optimize)
+        # We pass the same source_connection to vacuum
+        if source_connection:
+            self.vacuum_db(connection=source_connection)
+        else:
+            # Legacy: vacuum locally if no connection provided
+            self.vacuum_db()
+
+            # 2. Proceed with Backup (Copy)
+        start = datetime.now()
+
         if path.isfile(self.output_filepath):
             remove(self.output_filepath)
 
@@ -43,59 +78,20 @@ class SqLiteDbbackup():
             except:
                 pass
 
-        # context managers do not work well with threads for some reason ...
-        # for now connect will be used outside of context
-
-        src = None
         dst = None
         try:
-            src = connect(self.input_filepath)
             dst = connect(self.output_filepath)
 
-            src.backup(dst,
-                       pages=self.pages,
-                       progress=self._backup_progress)
+            if source_connection:
+                source_connection.backup(dst, pages=self.pages, progress=self._backup_progress)
+            else:
+                with connect(self.input_filepath) as src:
+                    src.backup(dst, pages=self.pages, progress=self._backup_progress)
 
-            if src is not None:
-                src.close()
-            if dst is not None:
-                dst.close()
-
+            dst.close()
             self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
         except:
-            # try to release the connections if any exception occurred above
-            try:
-                if src is not None:
-                    src.close()
-                if dst is not None:
-                    dst.close()
-            except:
-                # if closing the connections fails, simply do nothing
-                pass
-
-            # finally route the exception to the main thread
-            raise Exception(format_exc(chain=False))
-    def vacuum_db(self):
-        start = datetime.now()
-        # context managers do not work well with threads for some reason ...
-        # for now connect will be used outside of context
-        con = None
-        try:
-            con = connect(self.input_filepath)
-            con.execute("VACUUM")
-            con.close()
-
-            self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
-        except:
-            # try to release the connection if any exception occurred above
-            try:
-                if con is not None:
-                    con.close()
-            except:
-                # if closing the connections fails, simply do nothing
-                pass
-
-            # finally route the exception to the main thread
+            if dst: dst.close()
             raise Exception(format_exc(chain=False))
 
     def thread_slave(self,
@@ -114,7 +110,6 @@ class SqLiteDbbackup():
         while True:
             if check_if_backup():
                 try:
-                    self.vacuum_db()
                     self.backup_db()
                 except:
                     self._log.warning(f'Failed to backup db:\n{format_exc(chain=False)}')
