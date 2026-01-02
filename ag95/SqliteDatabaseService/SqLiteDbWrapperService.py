@@ -1,5 +1,7 @@
 from ag95 import (Singleton_without_cache,
                   SqLiteDbWrapper,
+                  SqLiteDbbackup,
+                  SqLiteDbMigration,
                   SqLiteColumnDef,
                   stdin_watcher)
 from flask import (Flask,
@@ -165,6 +167,20 @@ class ServiceBackend(metaclass=Singleton_without_cache):
                                         record_ID=record_ID)
         )
 
+    def backup_db(self, output_filepath: str):
+        # Execute the backup using the worker's DB connection (db.con)
+        self.worker.execute(
+            lambda db: SqLiteDbbackup(input_filepath=db.database_path,
+                                      output_filepath=output_filepath).backup_db(source_connection=db.con)
+        )
+
+    def migrate_db(self, all_tables_def: Optional[List] = None):
+        # Execute the migration using the worker's DB wrapper (db)
+        self.worker.execute(
+            lambda db: SqLiteDbMigration(database_path=db.database_path,
+                                         all_tables_def=all_tables_def).migrate(db_wrapper=db)
+        )
+
 def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
                                        SERVICE_PORT=5834,
                                        database_path='database.db',
@@ -225,6 +241,39 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
                 limit=payload.get('limit')
             )
         )
+
+    @app.post('/backup_db')
+    def backup_db():
+        payload = request.json or {}
+        # Default to database_BAK.db if not specified
+        output_filepath = payload.get('output_filepath', 'database_BAK.db')
+
+        try:
+            backend.backup_db(output_filepath=output_filepath)
+            return {'status': 'ok', 'message': f'Backup created at {output_filepath}'}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}, 500
+
+    @app.post('/migrate_db')
+    def migrate_db():
+        payload = request.json or {}
+        raw_defs = payload.get('all_tables_def')
+
+        final_defs = None
+
+        # If the user passed a schema in the JSON, we must reconstruct the objects
+        # because SqLiteDbMigration expects SqLiteColumnDef objects, not dicts.
+        if raw_defs:
+            final_defs = []
+            for table in raw_defs:
+                cols = [SqLiteColumnDef(c['column_name'], c['column_type']) for c in table['columns_def']]
+                final_defs.append({'table_name': table['table_name'], 'columns_def': cols})
+
+        try:
+            backend.migrate_db(all_tables_def=final_defs)
+            return {'status': 'ok', 'message': 'Migration completed'}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}, 500
 
     serve(
         app,
