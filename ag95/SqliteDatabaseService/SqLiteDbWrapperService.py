@@ -27,17 +27,23 @@ class DbTask:
         self.done = threading.Event()
 
 class SqliteDbWorker:
-    def __init__(self, database_path: str, timeout: int):
+    def __init__(self, database_path: str, timeout: int, use_wal: bool = False):
         self.database_path = database_path
         self.timeout = timeout
+        self.use_wal = use_wal
         self.queue = queue.Queue()
         self._stop = False
+        self._db_ready = threading.Event()  # Signal when db is created
+        self.db = None  # Will be set by worker thread
 
         self.thread = threading.Thread(
             target=self._run,
             daemon=True
         )
         self.thread.start()
+
+        # Wait for worker to create the database connection
+        self._db_ready.wait(timeout=5.0)
 
         shutdown_watcher = threading.Thread(target=stdin_watcher,
                                             kwargs={'trigger_command': 'exit',
@@ -47,23 +53,38 @@ class SqliteDbWorker:
         shutdown_watcher.start()
 
     def _run(self):
-        with SqLiteDbWrapper(
+        # Create the connection IN THE WORKER THREAD
+        self.db = SqLiteDbWrapper(
             database_path=self.database_path,
-            timeout=self.timeout
-        ) as db:
+            timeout=self.timeout,
+            use_wal=self.use_wal
+        )
 
-            while not self._stop:
-                task: DbTask = self.queue.get()
+        # Set auto-commit mode
+        self.db.con.isolation_level = None
 
-                if task is None:
-                    break
+        # Signal that db is ready
+        self._db_ready.set()
 
-                try:
-                    task.result = task.fn(db, *task.args, **task.kwargs)
-                except Exception as e:
-                    task.error = e
-                finally:
-                    task.done.set()
+        while not self._stop:
+            task: DbTask = self.queue.get()
+
+            if task is None:
+                break
+
+            try:
+                task.result = task.fn(self.db, *task.args, **task.kwargs)
+                # Explicit commit
+                self.db.con.commit()
+            except Exception as e:
+                self.db.con.rollback()
+                task.error = e
+            finally:
+                task.done.set()
+
+        # Clean up when thread exits
+        if self.db:
+            self.db.con.close()
 
     def execute(self, fn, *args, **kwargs):
         task = DbTask(fn, args, kwargs)
@@ -77,15 +98,20 @@ class SqliteDbWorker:
 
     def shutdown(self):
         self._stop = True
-        self.queue.put(None)
-        self.thread.join()
+        self.queue.put(None)  # Signal worker to exit
+
+        # Wait for worker thread to finish (with timeout)
+        self.thread.join(timeout=2.0)
+
+        # Send the exit command across to waitress
         os._exit(0)
 
 class ServiceBackend(metaclass=Singleton_without_cache):
-    def __init__(self, database_path: str, timeout: int):
+    def __init__(self, database_path: str, timeout: int, use_wal: bool = False):
         self.worker = SqliteDbWorker(
             database_path=database_path,
-            timeout=timeout
+            timeout=timeout,
+            use_wal=use_wal
         )
 
     def get_tables_columns(self):
@@ -142,11 +168,12 @@ class ServiceBackend(metaclass=Singleton_without_cache):
 def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
                                        SERVICE_PORT=5834,
                                        database_path='database.db',
-                                       timeout=60):
-
+                                       timeout=60,
+                                       use_wal=False):
     backend = ServiceBackend(
         database_path=database_path,
-        timeout=timeout
+        timeout=timeout,
+        use_wal=use_wal
     )
 
     app = Flask(__name__)
