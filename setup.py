@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.3.86'
+VERSION = '0.3.87'
 DESCRIPTION = 'ag95 scripts collection'
 LONG_DESCRIPTION = 'Various scripts that can be used in all kinds of python projects.'
 
@@ -28,7 +28,8 @@ setup(
         "SqliteDatabaseService": [
             'concurrent_log_handler',
             'flask',
-            'waitress'
+            'waitress',
+            'requests'
         ],
         "GenericDatabase": [
             'concurrent_log_handler'
