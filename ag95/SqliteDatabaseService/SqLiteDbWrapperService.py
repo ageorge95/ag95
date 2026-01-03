@@ -167,6 +167,16 @@ class ServiceBackend(metaclass=Singleton_without_cache):
                                         record_ID=record_ID)
         )
 
+    def clear_old_records(self,
+                          table_name: AnyStr,
+                          since_time_in_past_s: int,
+                          timestamp_column_name: AnyStr = 'TIMESTAMP'):
+        self.worker.execute(
+            lambda db: db.clear_old_records(table_name=table_name,
+                                            since_time_in_past_s=since_time_in_past_s,
+                                            timestamp_column_name=timestamp_column_name)
+        )
+
     def backup_db(self, output_filepath: str):
         # Execute the backup using the worker's DB connection (db.con)
         self.worker.execute(
@@ -225,6 +235,16 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
         backend.delete_record(
             table_name=payload['table_name'],
             record_ID=payload['record_ID']
+        )
+        return {'status': 'ok'}
+
+    @app.post('/clear_old_records')
+    def clear_old_records():
+        payload = request.json
+        backend.clear_old_records(
+            table_name=payload['table_name'],
+            since_time_in_past_s=payload['since_time_in_past_s'],
+            timestamp_column_name=payload['timestamp_column_name']
         )
         return {'status': 'ok'}
 
