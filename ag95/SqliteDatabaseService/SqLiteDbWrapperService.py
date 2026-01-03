@@ -244,7 +244,7 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
         backend.clear_old_records(
             table_name=payload['table_name'],
             since_time_in_past_s=payload['since_time_in_past_s'],
-            timestamp_column_name=payload['timestamp_column_name']
+            timestamp_column_name=payload.get('timestamp_column_name', 'TIMESTAMP')
         )
         return {'status': 'ok'}
 
