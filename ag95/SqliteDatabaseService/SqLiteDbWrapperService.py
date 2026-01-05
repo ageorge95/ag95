@@ -18,6 +18,33 @@ import threading
 import queue
 import os
 import requests
+import time
+
+all_shutdown_watcher_modes = Literal["ag95_stdin_watcher", "wait_for_exit_file", "none"]
+def shutdown_watcher_start(mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher',
+                           trigger_action = (lambda: None)):
+    if mode == "ag95_stdin_watcher":
+        shutdown_watcher = threading.Thread(target=stdin_watcher,
+                                            kwargs={'trigger_command': 'exit',
+                                                    'init_action': (lambda: None),
+                                                    'trigger_action': trigger_action},
+                                            daemon=True)
+        shutdown_watcher.start()
+
+    elif mode == "wait_for_exit_file":
+        def wait_for_exit_file():
+            while True:
+                if os.path.isfile('exit'):
+                    trigger_action()
+                else:
+                    time.sleep(1)
+
+        shutdown_watcher = threading.Thread(target=wait_for_exit_file,
+                                            daemon=True)
+        shutdown_watcher.start()
+
+    else:
+        return
 
 class DbTask:
     def __init__(self, fn, args, kwargs):
@@ -29,7 +56,11 @@ class DbTask:
         self.done = threading.Event()
 
 class SqliteDbWorker:
-    def __init__(self, database_path: str, timeout: int, use_wal: bool = False):
+    def __init__(self,
+                 database_path: str,
+                 timeout: int,
+                 use_wal: bool = False,
+                 shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher'):
         self.database_path = database_path
         self.timeout = timeout
         self.use_wal = use_wal
@@ -47,12 +78,8 @@ class SqliteDbWorker:
         # Wait for worker to create the database connection
         self._db_ready.wait(timeout=5.0)
 
-        shutdown_watcher = threading.Thread(target=stdin_watcher,
-                                            kwargs={'trigger_command': 'exit',
-                                                    'init_action': (lambda: None),
-                                                    'trigger_action': (lambda: self.shutdown())},
-                                            daemon=True)
-        shutdown_watcher.start()
+        shutdown_watcher_start(mode=shutdown_watcher_mode,
+                               trigger_action=(lambda: self.shutdown()))
 
     def _run(self):
         # Create the connection IN THE WORKER THREAD
@@ -109,11 +136,16 @@ class SqliteDbWorker:
         os._exit(0)
 
 class ServiceBackend(metaclass=Singleton_without_cache):
-    def __init__(self, database_path: str, timeout: int, use_wal: bool = False):
+    def __init__(self,
+                 database_path: str,
+                 timeout: int,
+                 use_wal: bool = False,
+                 shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher'):
         self.worker = SqliteDbWorker(
             database_path=database_path,
             timeout=timeout,
-            use_wal=use_wal
+            use_wal=use_wal,
+            shutdown_watcher_mode=shutdown_watcher_mode
         )
 
     def get_tables_columns(self):
@@ -195,11 +227,13 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
                                        SERVICE_PORT=5834,
                                        database_path='database.db',
                                        timeout=60,
-                                       use_wal=False):
+                                       use_wal=False,
+                                       shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher'):
     backend = ServiceBackend(
         database_path=database_path,
         timeout=timeout,
-        use_wal=use_wal
+        use_wal=use_wal,
+        shutdown_watcher_mode = shutdown_watcher_mode
     )
 
     app = Flask(__name__)
