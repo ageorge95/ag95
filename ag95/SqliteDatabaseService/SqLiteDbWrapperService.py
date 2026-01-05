@@ -257,7 +257,7 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
                 select_values=payload.get('select_values'),
                 where_statement=payload.get('where_statement'),
                 order=payload.get('order'),
-                order_by=payload.get('order_by'),
+                order_by=payload.get('order_by', 'ID'),
                 limit=payload.get('limit')
             )
         )
