@@ -60,7 +60,6 @@ class SqliteDbWorker:
                  database_path: str,
                  timeout: int,
                  use_wal: bool = True,
-                 shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher',
                  num_threads: int = 4):
         self.database_path = database_path
         self.timeout = timeout
@@ -92,9 +91,6 @@ class SqliteDbWorker:
             self._ready_barrier.wait(timeout=10.0)
         except threading.BrokenBarrierError:
             print("Error: Database worker threads failed to initialize in time.")
-
-        shutdown_watcher_start(mode=shutdown_watcher_mode,
-                               trigger_action=(lambda: self.shutdown()))
 
     def _run(self):
         # Create a THREAD-LOCAL connection.
@@ -154,20 +150,16 @@ class SqliteDbWorker:
         for t in self.threads:
             t.join(timeout=2.0)
 
-        os._exit(0)
-
 class ServiceBackend(metaclass=Singleton_without_cache):
     def __init__(self,
                  database_path: str,
                  timeout: int,
                  use_wal: bool = True,
-                 shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher',
                  num_threads: int = 4):
         self.worker = SqliteDbWorker(
             database_path=database_path,
             timeout=timeout,
             use_wal=use_wal,
-            shutdown_watcher_mode=shutdown_watcher_mode,
             num_threads=num_threads
         )
 
@@ -253,13 +245,23 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
                                        use_wal=True,
                                        shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher',
                                        num_threads: int = 4):
+    # Create an event to signal the main service thread to exit
+    stop_event = threading.Event()
+
+    def handle_shutdown():
+        backend.worker.shutdown()  # Closes all DB connections gracefully
+        stop_event.set()  # Signals the loop below to stop
+
     backend = ServiceBackend(
         database_path=database_path,
         timeout=timeout,
         use_wal=use_wal,
-        shutdown_watcher_mode = shutdown_watcher_mode,
         num_threads=num_threads
     )
+
+    # Start the watcher and use the handle_shutdown() handler
+    shutdown_watcher_start(mode=shutdown_watcher_mode,
+                           trigger_action=handle_shutdown)
 
     app = Flask(__name__)
 
@@ -354,12 +356,22 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
         except Exception as e:
             return {'status': 'error', 'message': str(e)}, 500
 
-    serve(
-        app,
-        host='127.0.0.1' if LOCALHOST_ONLY else '0.0.0.0',
-        port=SERVICE_PORT,
-        threads=5
+    # Start Waitress in a DAEMON thread so it doesn't block the exit
+    server_thread = threading.Thread(
+        target=serve,
+        kwargs={
+            'app': app,
+            'host': '127.0.0.1' if LOCALHOST_ONLY else '0.0.0.0',
+            'port': SERVICE_PORT,
+            'threads': 5
+        },
+        daemon=True
     )
+    server_thread.start()
+
+    # Keep this thread alive until handle_shutdown is called
+    while not stop_event.is_set():
+        stop_event.wait(timeout=1.0)
 
 if __name__ == '__main__':
     SERVICE_PORT = 5834
