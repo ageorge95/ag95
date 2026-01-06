@@ -59,61 +59,80 @@ class SqliteDbWorker:
     def __init__(self,
                  database_path: str,
                  timeout: int,
-                 use_wal: bool = False,
-                 shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher'):
+                 use_wal: bool = True,
+                 shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher',
+                 num_threads: int = 4):
         self.database_path = database_path
         self.timeout = timeout
         self.use_wal = use_wal
         self.queue = queue.Queue()
         self._stop = False
-        self._db_ready = threading.Event()  # Signal when db is created
-        self.db = None  # Will be set by worker thread
+        self.num_threads = num_threads
+        self.threads = []
 
-        self.thread = threading.Thread(
-            target=self._run,
-            daemon=True
-        )
-        self.thread.start()
+        # We need a barrier or counter to ensure ALL threads are ready before we proceed
+        # otherwise the service might start accepting requests before connections are open.
+        self._ready_barrier = threading.Barrier(num_threads + 1)  # +1 for the main thread
 
-        # Wait for worker to create the database connection
-        self._db_ready.wait(timeout=5.0)
+        # NEW: Ensure the DB is in WAL mode before threads start
+        # This prevents the "database is locked" race condition.
+        with SqLiteDbWrapper(database_path=self.database_path,
+                             timeout=self.timeout,
+                             use_wal=self.use_wal) as _:
+            pass
+
+        # Now it is safe to start multiple threads
+        for _ in range(num_threads):
+            t = threading.Thread(target=self._run, daemon=True)
+            t.start()
+            self.threads.append(t)
+
+        # Wait for all workers to create their database connections
+        try:
+            self._ready_barrier.wait(timeout=10.0)
+        except threading.BrokenBarrierError:
+            print("Error: Database worker threads failed to initialize in time.")
 
         shutdown_watcher_start(mode=shutdown_watcher_mode,
                                trigger_action=(lambda: self.shutdown()))
 
     def _run(self):
-        # Create the connection IN THE WORKER THREAD
-        self.db = SqLiteDbWrapper(
+        # Create a THREAD-LOCAL connection.
+        # SQLite connections generally cannot be shared across threads.
+        db = SqLiteDbWrapper(
             database_path=self.database_path,
             timeout=self.timeout,
             use_wal=self.use_wal
         )
 
         # Set auto-commit mode
-        self.db.con.isolation_level = None
+        db.con.isolation_level = None
 
-        # Signal that db is ready
-        self._db_ready.set()
+        # Signal that this specific thread is ready
+        self._ready_barrier.wait()
 
         while not self._stop:
             task: DbTask = self.queue.get()
 
+            # Sentinel value to stop the thread
             if task is None:
+                self.queue.task_done()
                 break
 
             try:
-                task.result = task.fn(self.db, *task.args, **task.kwargs)
-                # Explicit commit
-                self.db.con.commit()
+                # Execute the task using THIS thread's connection
+                task.result = task.fn(db, *task.args, **task.kwargs)
+                db.con.commit()
             except Exception as e:
-                self.db.con.rollback()
+                db.con.rollback()
                 task.error = e
             finally:
                 task.done.set()
+                self.queue.task_done()
 
         # Clean up when thread exits
-        if self.db:
-            self.db.con.close()
+        if db:
+            db.con.close()
 
     def execute(self, fn, *args, **kwargs):
         task = DbTask(fn, args, kwargs)
@@ -127,25 +146,29 @@ class SqliteDbWorker:
 
     def shutdown(self):
         self._stop = True
-        self.queue.put(None)  # Signal worker to exit
+        # Put 'None' in the queue once for EACH thread
+        for _ in range(self.num_threads):
+            self.queue.put(None)
 
-        # Wait for worker thread to finish (with timeout)
-        self.thread.join(timeout=2.0)
+        # Wait for all threads to finish
+        for t in self.threads:
+            t.join(timeout=2.0)
 
-        # Send the exit command across to waitress
         os._exit(0)
 
 class ServiceBackend(metaclass=Singleton_without_cache):
     def __init__(self,
                  database_path: str,
                  timeout: int,
-                 use_wal: bool = False,
-                 shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher'):
+                 use_wal: bool = True,
+                 shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher',
+                 num_threads: int = 4):
         self.worker = SqliteDbWorker(
             database_path=database_path,
             timeout=timeout,
             use_wal=use_wal,
-            shutdown_watcher_mode=shutdown_watcher_mode
+            shutdown_watcher_mode=shutdown_watcher_mode,
+            num_threads=num_threads
         )
 
     def get_tables_columns(self):
@@ -227,13 +250,15 @@ def initialize_SqliteDbWrapper_service(LOCALHOST_ONLY=True,
                                        SERVICE_PORT=5834,
                                        database_path='database.db',
                                        timeout=60,
-                                       use_wal=False,
-                                       shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher'):
+                                       use_wal=True,
+                                       shutdown_watcher_mode: all_shutdown_watcher_modes = 'ag95_stdin_watcher',
+                                       num_threads: int = 4):
     backend = ServiceBackend(
         database_path=database_path,
         timeout=timeout,
         use_wal=use_wal,
-        shutdown_watcher_mode = shutdown_watcher_mode
+        shutdown_watcher_mode = shutdown_watcher_mode,
+        num_threads=num_threads
     )
 
     app = Flask(__name__)
