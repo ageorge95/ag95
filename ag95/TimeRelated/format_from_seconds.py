@@ -1,7 +1,9 @@
-def format_from_seconds(seconds: [int, float],
+def format_from_seconds(seconds: int | float,
                         granularity: int = 2):
 
     intervals = (
+        ('years', 29030400),  # 60 * 60 * 24 * 7 * 4 * 12
+        ('months', 2419200),  # 60 * 60 * 24 * 7 * 4
         ('weeks', 604800),  # 60 * 60 * 24 * 7
         ('days', 86400),    # 60 * 60 * 24
         ('hours', 3600),    # 60 * 60
@@ -29,7 +31,9 @@ if __name__ == '__main__':
         [[60*60*2, 2], '2 hours'],
         [[60*60*2+60, 2], '2 hours, 1 minute'],
         [[60.0 * 60 * 2 + 60, 2], '2.0 hours, 1.0 minute'],
-        [[60.0 * 60 * 2 + 61, 3], '2.0 hours, 1.0 minute, 1.0 second']
+        [[60.0 * 60 * 2 + 61, 3], '2.0 hours, 1.0 minute, 1.0 second'],
+        [[3242345, 4], '1 month, 1 week, 2 days, 12 hours'],
+        [[324234531, 5], '11 years, 2 months, 17 hours, 8 minutes, 51 seconds']
     ]:
         result = format_from_seconds(*test[0])
         assert result == test[1] ,\
