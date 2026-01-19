@@ -120,3 +120,123 @@ class SqLiteDbWrapperServiceClient:
         """Triggers a database migration on the service."""
         payload = {'all_tables_def': all_tables_def}
         return self._request('post', '/migrate_db', json=payload)
+
+# --- Test Suite ---
+if __name__ == '__main__':
+    import threading
+    import time
+    import os
+    from datetime import datetime
+    # We need to import the service from the other file to start it for the test
+    from SqLiteDbWrapperService import initialize_SqliteDbWrapper_service, all_shutdown_watcher_modes
+
+    # --- Test Setup ---
+    TEST_DB_FILE = "test_client_db.db"
+    TEST_BACKUP_FILE = "client_test_BAK.db"
+    TEST_SERVICE_PORT = 5835  # Use a different port to avoid conflicts
+
+    # Clean up any leftover files from a previous failed run
+    if os.path.exists(TEST_DB_FILE): os.remove(TEST_DB_FILE)
+    if os.path.exists(TEST_BACKUP_FILE): os.remove(TEST_BACKUP_FILE)
+    if os.path.exists("exit"): os.remove("exit")
+
+    print("Starting background service for testing...")
+    service_thread = threading.Thread(
+        target=initialize_SqliteDbWrapper_service,
+        kwargs={
+            'LOCALHOST_ONLY': True,
+            'SERVICE_PORT': TEST_SERVICE_PORT,
+            'database_path': TEST_DB_FILE,
+            # Use file-based shutdown for easy programmatic control
+            'shutdown_watcher_mode': 'wait_for_exit_file'
+        },
+        daemon=True
+    )
+    service_thread.start()
+    time.sleep(2)  # Give the service a moment to start up
+
+    # --- Test Execution ---
+    try:
+        with SqLiteDbWrapperServiceClient(port=TEST_SERVICE_PORT) as client:
+            print("--- Running Client Tests ---")
+
+            # 1. Test DB Migration
+            migration_payload = {
+                "all_tables_def": [{
+                    "table_name": "my_test_table",
+                    "columns_def": [
+                        {"column_name": "col_A", "column_type": "INTEGER"},
+                        {"column_name": "col_B", "column_type": "TEXT"}
+                    ]
+                }]
+            }
+            client.migrate_db(all_tables_def=migration_payload['all_tables_def'])
+            print("✅ Test 1: Migration successful")
+
+            # 2. Test Get Tables & Columns
+            tables = client.get_tables_columns()
+            expected_tables = {'my_test_table': ['ID', 'TIMESTAMP', 'col_A', 'col_B']}
+            assert tables == expected_tables, f"Expected {expected_tables}, got {tables}"
+            print("✅ Test 2: Get Tables & Columns successful")
+
+            # 3. Test Insert Record
+            timestamp_before = int(datetime.now().timestamp())
+            client.insert_record(
+                table_name='my_test_table',
+                column_names=['col_A', 'col_B'],
+                column_values=[123, 'hello']
+            )
+            print("✅ Test 3: Insert Record successful")
+
+            # 4. Test Get Records
+            records = client.get_records(table_name='my_test_table')
+            assert len(records) == 1, "Should be 1 record"
+            # Verify record content (ID=1, timestamp is recent, data is correct)
+            assert records[0][0] == 1
+            assert records[0][1] >= timestamp_before
+            assert records[0][2:] == [123, 'hello']
+            print("✅ Test 4: Get Records successful")
+
+            # 5. Test Get Specific Columns
+            records_subset = client.get_records(table_name='my_test_table', select_values=['col_B', 'col_A'])
+            expected_subset = [['hello', 123]]
+            assert records_subset == expected_subset, f"Expected {expected_subset}, got {records_subset}"
+            print("✅ Test 5: Get Specific Columns successful")
+
+            # 6. Test Update Record
+            client.update_record(table_name='my_test_table', record_ID=1, data={'col_B': 'world'})
+            updated_records = client.get_records(table_name='my_test_table')
+            assert updated_records[0][3] == 'world', "Update failed"
+            print("✅ Test 6: Update Record successful")
+
+            # 7. Test Delete Record
+            client.delete_record(table_name='my_test_table', record_ID=1)
+            final_records = client.get_records(table_name='my_test_table')
+            assert final_records == [], "Delete failed, record still exists"
+            print("✅ Test 7: Delete Record successful")
+
+            # 8. Test DB Backup
+            client.backup_db(output_filepath=TEST_BACKUP_FILE)
+            assert os.path.exists(TEST_BACKUP_FILE), "Backup file was not created"
+            print("✅ Test 8: DB Backup successful")
+
+        print("\n🎉 All tests PASSED! 🎉")
+
+    except Exception as e:
+        print(f"\n❌ A test failed: {e}")
+    finally:
+        # --- Teardown ---
+        print("\nShutting down service and cleaning up...")
+        # Create the 'exit' file to signal the service to shut down
+        with open("exit", "w") as f:
+            f.write("stop")
+
+        service_thread.join(timeout=5)  # Wait for the service thread to terminate
+
+        # Clean up the files created during the test
+        if os.path.exists(TEST_DB_FILE): os.remove(TEST_DB_FILE)
+        if os.path.exists(TEST_DB_FILE+'-shm'): os.remove(TEST_DB_FILE+'-shm')
+        if os.path.exists(TEST_DB_FILE+'-wal'): os.remove(TEST_DB_FILE+'-wal')
+        if os.path.exists(TEST_BACKUP_FILE): os.remove(TEST_BACKUP_FILE)
+        if os.path.exists("exit"): os.remove("exit")
+        print("Cleanup complete.")
