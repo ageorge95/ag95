@@ -50,6 +50,7 @@ except:
 # ############## SqliteDatabaseService #################
 try:
     from .SqliteDatabaseService.SqLiteDbWrapperService import initialize_SqliteDbWrapper_service
+    from .SqliteDatabaseService.SqLiteDbWrapperServiceClient import SqLiteDbWrapperServiceClient
 except:
     pass
 
