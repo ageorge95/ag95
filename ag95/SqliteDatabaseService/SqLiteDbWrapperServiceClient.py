@@ -111,6 +111,25 @@ class SqLiteDbWrapperServiceClient:
         payload = {'table_name': table_name, 'record_ID': record_ID}
         return self._request('post', '/delete_record', json=payload)
 
+    def clear_old_records(self,
+                          table_name: AnyStr,
+                          since_time_in_past_s: int,
+                          timestamp_column_name: AnyStr = 'TIMESTAMP') -> Dict:
+        """
+        Deletes records older than a given time window.
+
+        Args:
+            table_name (str): Target table name.
+            since_time_in_past_s (int): Age threshold in seconds.
+            timestamp_column_name (str): Timestamp column name (default: 'TIMESTAMP').
+        """
+        payload = {
+            'table_name': table_name,
+            'since_time_in_past_s': since_time_in_past_s,
+            'timestamp_column_name': timestamp_column_name
+        }
+        return self._request('post', '/clear_old_records', json=payload)
+
     def backup_db(self, output_filepath: str = 'database_BAK.db') -> Dict:
         """Triggers a database backup on the service."""
         payload = {'output_filepath': output_filepath}
