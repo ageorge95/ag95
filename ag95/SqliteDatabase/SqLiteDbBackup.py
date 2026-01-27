@@ -32,6 +32,7 @@ class SqLiteDbbackup():
 
     def vacuum_db(self, connection=None):
         start = datetime.now()
+        threshold_mb = 50  # Limit for vacuuming
 
         # If an existing connection is provided, use it.
         # Otherwise, open a temporary new one (legacy behavior).
@@ -43,11 +44,26 @@ class SqLiteDbbackup():
                 local_con = connect(self.input_filepath)
                 target_con = local_con
 
-            # VACUUM requires no active transaction.
-            # If the worker left a transaction open (unlikely with isolation_level=None), this might fail.
-            target_con.execute("VACUUM")
+            # 1. Check free space before vacuuming
+            cursor = target_con.cursor()
+            freelist_count = cursor.execute('PRAGMA freelist_count').fetchone()[0]
+            page_size = cursor.execute('PRAGMA page_size').fetchone()[0]
 
-            self._log.info(f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s')
+            free_bytes = freelist_count * page_size
+            free_mb = free_bytes / (1024 * 1024)
+
+            # 2. Decide whether to Vacuum
+            if free_mb > threshold_mb:
+                self._log.info(f'Free space ({free_mb:.2f} MB) > {threshold_mb} MB. Starting VACUUM...')
+
+                # VACUUM requires no active transaction.
+                target_con.execute("VACUUM")
+
+                self._log.info(
+                    f'DB vacuum completed in {(datetime.now() - start).total_seconds()}s. Reclaimed {free_mb:.2f} MB.')
+            else:
+                self._log.info(f'DB vacuum skipped. Free space ({free_mb:.2f} MB) is below {threshold_mb} MB limit.')
+
         except:
             # Only log/raise, do not close the external connection
             raise Exception(format_exc(chain=False))
@@ -141,10 +157,10 @@ if __name__ == '__main__':
     # simple backup request
     SqLiteDbbackup().backup_db()
 
-    # threading daemon backup request
-    # exit files are used
-    SqLiteDbbackup(output_filepath='database_BAKdaemon.db').thread_master(time_between_backups_s=5).start()
-    with open('exit', 'w') as dummy:
-        pass
+    # # threading daemon backup request
+    # # exit files are used
+    # SqLiteDbbackup(output_filepath='database_BAKdaemon.db').thread_master(time_between_backups_s=5).start()
+    # with open('exit', 'w') as dummy:
+    #     pass
 
     print('No automatic tests implemented so far; Please check the expected behavior manually.')
