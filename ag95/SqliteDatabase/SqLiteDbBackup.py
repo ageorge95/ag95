@@ -1,7 +1,8 @@
+import shutil
 from ag95 import configure_logger
 from os import (path,
-                remove,
-                makedirs)
+                makedirs,
+                remove)
 from threading import Thread
 from time import sleep
 from sqlite3 import connect
@@ -73,42 +74,81 @@ class SqLiteDbbackup():
                 local_con.close()
 
     def backup_db(self, source_connection=None):
-        # 1. VACUUM first (Optimize)
-        # We pass the same source_connection to vacuum
+        # 1. VACUUM first (Conditional)
         if source_connection:
             self.vacuum_db(connection=source_connection)
         else:
-            # Legacy: vacuum locally if no connection provided
             self.vacuum_db()
 
-            # 2. Proceed with Backup (Copy)
+        # 2. Proceed with Fast Backup (Lock & Copy)
         start = datetime.now()
 
-        if path.isfile(self.output_filepath):
-            remove(self.output_filepath)
-
-        # create the root folder if missing
+        # Prepare destination folder
         if not path.isdir(path.dirname(self.output_filepath)):
             try:
                 makedirs(path.dirname(self.output_filepath))
             except:
                 pass
 
-        dst = None
+        lock_con = None
+        temp_backup = None
         try:
-            dst = connect(self.output_filepath)
+            # Connect with isolation_level=None to manage transactions manually
+            lock_con = connect(self.input_filepath, isolation_level=None)
 
-            if source_connection:
-                source_connection.backup(dst, pages=self.pages, progress=self._backup_progress)
-            else:
-                with connect(self.input_filepath) as src:
-                    src.backup(dst, pages=self.pages, progress=self._backup_progress)
+            # A. CHECK IF WAL MODE & CHECKPOINT BEFORE LOCKING
+            cursor = lock_con.cursor()
+            journal_mode = cursor.execute("PRAGMA journal_mode").fetchone()[0].lower()
 
-            dst.close()
-            self._log.info(f'DB backup completed in {(datetime.now() - start).total_seconds()}s')
-        except:
-            if dst: dst.close()
+            if journal_mode == 'wal':
+                # CHECKPOINT must happen BEFORE acquiring the write lock
+                # This moves data from the -wal file to the main .db file
+                lock_con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+
+            # B. ACQUIRE LOCK
+            # 'BEGIN IMMEDIATE' prevents other connections from writing,
+            # ensuring the file on disk doesn't change while we copy.
+            lock_con.execute("BEGIN IMMEDIATE")
+
+            # C. PERFORM FAST OS COPY TO TEMP FILE
+            # Use a temporary file first to avoid deleting the old backup until we know the new one succeeds
+            temp_backup = self.output_filepath + '.tmp'
+            shutil.copy2(self.input_filepath, temp_backup)
+
+            # D. RELEASE LOCK
+            lock_con.execute("ROLLBACK")
+
+            # E. REPLACE OLD BACKUP WITH NEW ONE
+            # Delete old backup first for better performance (avoids slow overwrite)
+            if path.exists(self.output_filepath):
+                try:
+                    remove(self.output_filepath)
+                except Exception as del_error:
+                    self._log.warning(f'Could not delete old backup: {del_error}')
+
+            # Rename temp file to final name (fast operation)
+            shutil.move(temp_backup, self.output_filepath)
+            temp_backup = None  # Mark as successfully moved
+
+            self._log.info(f'DB backup (Fast Copy) completed in {(datetime.now() - start).total_seconds()}s')
+
+        except Exception as e:
+            # Ensure lock is released even if copy fails
+            if lock_con:
+                try:
+                    lock_con.execute("ROLLBACK")
+                except:
+                    pass
+            # Clean up temp file if it exists
+            if temp_backup and path.exists(temp_backup):
+                try:
+                    remove(temp_backup)
+                except:
+                    pass
             raise Exception(format_exc(chain=False))
+        finally:
+            if lock_con:
+                lock_con.close()
 
     def thread_slave(self,
                      time_between_backups_s: int = 60*60*12):
