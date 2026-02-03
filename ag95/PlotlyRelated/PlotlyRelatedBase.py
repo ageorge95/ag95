@@ -203,7 +203,7 @@ class SinglePlot:
             update_args |= {'yaxis_range': [self.plot.forced_y_limits[0], self.plot.forced_y_limits[1]]}
 
         # remove the excessive white margins
-        update_args |= {'margin': dict(l=25, r=25, t=25, b=25)}
+        update_args |= {'margin': dict(l=25, r=25, t=50, b=25)}
 
         # update data on hover by default
         update_args |= {'hovermode': 'x'}
@@ -453,8 +453,8 @@ class MultiRowPlot:
         update_args |= {'hovermode': 'x'}
 
         # remove the excessive white margins
-        update_args |= {'margin': dict(l=0, r=0, t=25, b=25)} if not self.title\
-            else {'margin': dict(l=0, r=0, t=42, b=25)}
+        update_args |= {'margin': dict(l=0, r=0, t=50, b=25)} if not self.title\
+            else {'margin': dict(l=0, r=0, t=50, b=25)}
 
         # fully show the trace name by default
         update_args |= {'hoverlabel_namelength': -1}
