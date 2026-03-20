@@ -10,7 +10,14 @@ def red_green_from_range_value(value,
     value = max(min(value, max_value), min_value)
 
     # Calculate the ratio of the value within the range
-    ratio = (value - min_value) / (max_value - min_value)
+    # Check for a zero-width range to prevent a ZeroDivisionError.
+    if max_value == min_value:
+        # If min and max are the same, the range is zero.
+        # We can define the ratio as 0.0, resulting in full green,
+        # as the value is at the 'bottom' of its non-existent scale.
+        ratio = 0.0
+    else:
+        ratio = (value - min_value) / (max_value - min_value)
 
     # Interpolate between green (0, 255, 0) and red (255, 0, 0)
     red = int(ratio * 255)  # Red increases as the value increases
