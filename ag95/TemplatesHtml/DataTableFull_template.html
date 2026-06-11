@@ -119,6 +119,50 @@
     // Disable Plotly interactions on mobile/tablet
     disablePlotlyInteractions();
 
+    // ---- Jump-to-ID: navigate to and highlight the row whose first column matches jump_to_id ----
+    (function () {
+      var jumpId = new URLSearchParams(window.location.search).get('jump_to_id');
+      if (!jumpId) { return; }
+
+      var found = false;
+      {% for table in tables %}
+      if (!found) (function () {
+        var dt = $('#{{table.table_id}}').DataTable();
+        var targetIdx = null;
+
+        // rows().every() works with deferRender:true – reads internal data, not DOM nodes
+        dt.rows().every(function () {
+          if (String(this.data()[0]).trim() === jumpId) {
+            targetIdx = this.index();
+            return false; // break
+          }
+        });
+
+        if (targetIdx === null) { return; }
+        found = true;
+
+        // Navigate to the page that contains the target row.
+        // IMPORTANT: draw(false) keeps the page we just set; passing a truthy value like
+        // 'page' (string) would reset paging to page 0 in DataTables 2.x.
+        var sortedIdxs = dt.rows({ order: 'current' }).indexes().toArray();
+        var pos        = sortedIdxs.indexOf(targetIdx);
+        if (pos >= 0) {
+          var pageLen = dt.page.info().length;
+          dt.page(Math.floor(pos / pageLen)).draw(false);
+        }
+
+        // Scroll and highlight after the DOM has settled following the draw
+        setTimeout(function () {
+          var node = dt.row(targetIdx).node();
+          if (node) {
+            $(node).css('background-color', '#fff176');
+            $('html, body').animate({ scrollTop: $(node).offset().top - 100 }, 600);
+          }
+        }, 200);
+      })();
+      {% endfor %}
+    })();
+
   });
 </script>
 
